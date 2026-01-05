@@ -75,7 +75,7 @@ export const HeroSection = () => {
         </ol>
       </section>
 
-      <QuickMatchFormSection />  
+      {/* <QuickMatchFormSection />   */}
     </div>
   );
 };
