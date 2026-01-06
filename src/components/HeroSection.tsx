@@ -24,7 +24,7 @@ export const HeroSection = () => {
   ];
 
   return (
-    <div className="flex w-full px-[108px] mt-5 items-center justify-between relative bg-[#182744]">
+    <div className="flex w-full px-[108px] mt-15 items-center justify-between relative bg-[#182744]">
       <section className="flex flex-col w-[600px] items-start gap-10 relative">
         <div className="flex flex-col items-start gap-6 relative self-stretch w-full flex-[0_0_auto]">
           <h1 className="relative self-stretch mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-transparent text-[65px] tracking-[-2.80px] leading-[81.2px]">
@@ -75,7 +75,7 @@ export const HeroSection = () => {
         </ol>
       </section>
 
-      {/* <QuickMatchFormSection />   */}
+      <QuickMatchFormSection />  
     </div>
   );
 };
