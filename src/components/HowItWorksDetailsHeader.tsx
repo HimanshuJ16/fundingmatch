@@ -6,8 +6,7 @@ export const HowItWorksHeaderSection = () => {
           How it works
         </h2>
         <p className="[font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-base md:text-xl text-center leading-relaxed max-w-2xl">
-          A modern, simple journey — built for mobile — with clear steps and
-          fast outcomes.
+          A modern, simple journey — built for mobile <br /> with clear steps and fast outcomes.
         </p>
       </div>
     </header>
