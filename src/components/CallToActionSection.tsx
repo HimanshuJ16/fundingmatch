@@ -16,7 +16,7 @@ export const CallToActionSection = () => {
 
   return (
     <nav
-      className="inline-flex items-start gap-2 relative flex-[0_0_auto]"
+      className="flex w-full justify-center items-center gap-2 relative"
       role="navigation"
       aria-label="Call to action"
     >

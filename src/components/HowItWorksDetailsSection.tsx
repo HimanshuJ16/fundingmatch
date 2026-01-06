@@ -55,32 +55,72 @@ export const HowItWorksDetailsSection = () => {
   ];
 
   return (
-    <section className="flex items-center justify-center gap-6 relative self-stretch w-full flex-[0_0_auto]">
-      <div className="flex flex-col w-[600px] h-[550px] items-center justify-between p-8 relative rounded-3xl border border-solid border-[#ffffff17] bg-[linear-gradient(-20deg,rgba(30,47,79,1)_65%,rgba(29,67,67,1)_100%)]">
-        <div className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
+    <section className="flex flex-col lg:grid lg:grid-cols-2 gap-6 w-full max-w-7xl mx-auto px-4">
+      {/* Visual Flow Card */}
+      <div className="flex flex-col w-full min-h-[550px] items-center justify-between p-6 md:p-7 relative rounded-[32px] border border-solid border-[#ffffff17] bg-[linear-gradient(-20deg,rgba(30,47,79,1)_65%,rgba(29,67,67,1)_100%)] overflow-hidden">
+        {/* Feature Tags */}
+        <div className="flex flex-wrap items-center justify-center gap-3 w-full mb-8">
           {featureTags.map((tag) => (
             <div
               key={tag.id}
-              className="flex items-center justify-center gap-[3px] px-5 py-[18px] relative flex-1 grow bg-[#ffffff0a] rounded-[35px] border border-solid border-[#ffffff33]"
+              className="flex items-center justify-center px-4 py-3 bg-[#ffffff0a] rounded-[35px] border border-solid border-[#ffffff33] backdrop-blur-sm"
             >
-              <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-Regular',Helvetica] font-normal text-white text-base tracking-[-0.32px] leading-[25.6px] whitespace-nowrap">
+              <span className="text-white text-sm md:text-base font-normal font-['Roobert-Regular'] whitespace-nowrap">
                 {tag.label}
-              </div>
+              </span>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-1 relative self-stretch w-full flex-[0_0_auto]">
+        {/* Process Flow Diagram - Mobile (2x2 Grid) */}
+        <div className="flex flex-col gap-6 w-full max-w-[320px] mx-auto mb-8 lg:hidden">
+          <div className="flex items-center justify-between w-full">
+            {/* Row 1 */}
+            <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">
+              Application
+            </div>
+
+            <img
+              src="https://c.animaapp.com/WGyxBptO/img/arrow-3.svg"
+              alt="Arrow"
+              className="w-6 sm:w-8 h-auto object-contain"
+            />
+
+            <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">
+              AI Match
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between w-full">
+            {/* Row 2 */}
+            <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">
+              Lenders
+            </div>
+
+            <img
+              src="https://c.animaapp.com/WGyxBptO/img/arrow-3.svg"
+              alt="Arrow"
+              className="w-6 sm:w-8 h-auto object-contain"
+            />
+
+            <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">
+              Offers
+            </div>
+          </div>
+        </div>
+
+        {/* Process Flow Diagram - Desktop (Linear) */}
+        <div className="hidden lg:flex items-center justify-center gap-2 w-full mt-25">
           {processSteps.map((step, index) => (
             <React.Fragment key={step.id}>
-              <div className="flex items-center justify-center gap-[3px] px-5 py-[33px] relative flex-1 grow bg-[#cfd296cf] rounded-[69px] border border-dashed border-[#9da25a]">
-                <div className="relative w-fit mt-[-1.00px] ml-[-8.62px] mr-[-8.62px] [font-family:'Roobert-Regular',Helvetica] font-normal text-[#191d05] text-base tracking-[-0.32px] leading-[25.6px] whitespace-nowrap">
+              <div className="flex items-center justify-center w-[160px] h-[80px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a]">
+                <span className="text-[#191d05] font-['Roobert-Regular'] text-base text-center">
                   {step.label}
-                </div>
+                </span>
               </div>
               {step.arrow && (
                 <img
-                  className="relative w-[35.5px] h-[7.36px] object-cover"
+                  className="w-8 h-auto object-contain"
                   alt="Arrow"
                   src={step.arrow}
                 />
@@ -89,17 +129,17 @@ export const HowItWorksDetailsSection = () => {
           ))}
         </div>
 
-        <div className="flex items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
+        {/* Statistics */}
+        <div className="grid grid-cols-2 gap-4 w-full mt-auto">
           {statistics.map((stat, index) => (
             <div
               key={index}
-              className="flex flex-col items-start gap-5 px-7 py-[22px] relative flex-1 grow bg-[#ffffff0a] rounded-2xl overflow-hidden border border-solid border-[#ffffff33]"
+              className="flex flex-col items-start gap-2 px-6 py-5 bg-[#ffffff0a] rounded-2xl border border-solid border-[#ffffff33] hover:bg-[#ffffff1a] transition-colors"
             >
-              <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-Bold',Helvetica] font-bold text-white text-4xl tracking-[-0.72px] leading-[normal] whitespace-nowrap">
+              <div className="text-white text-3xl md:text-4xl font-bold font-['Roobert-Regular']">
                 {stat.value}
               </div>
-
-              <div className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-xl tracking-[0] leading-[32.0px]">
+              <div className="text-[#ffffffcc] text-base md:text-lg font-normal font-['Roobert-Regular'] leading-tight">
                 {stat.description}
               </div>
             </div>
@@ -107,25 +147,25 @@ export const HowItWorksDetailsSection = () => {
         </div>
       </div>
 
-      <div className="flex flex-col w-[600px] items-start gap-[5px] relative self-stretch">
+      {/* Steps List */}
+      <div className="flex flex-col gap-5 w-full h-full">
         {steps.map((step) => (
           <article
             key={step.number}
-            className="flex flex-col items-start justify-center gap-6 px-8 py-6 relative flex-1 self-stretch w-full grow rounded-3xl border border-solid border-[#ffffff17] bg-[linear-gradient(-20deg,rgba(30,47,79,1)_65%,rgba(29,67,67,1)_100%)]"
+            className="flex flex-col justify-center p-4 md:p-6 rounded-[32px] border border-solid border-[#ffffff17] bg-[linear-gradient(-20deg,rgba(30,47,79,1)_65%,rgba(29,67,67,1)_100%)] flex-1 min-h-[100px] hover:border-[#ffffff33] transition-colors"
           >
-            <div className="flex items-start gap-3 relative self-stretch w-full flex-[0_0_auto]">
-              <div className="relative w-7 h-7 bg-[#b0efbd] rounded-[39px] overflow-hidden flex items-center justify-center">
-                <div className="[font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-base text-center tracking-[0] leading-none whitespace-nowrap">
+            <div className="flex items-start gap-4 w-full">
+              <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 bg-[#b0efbd] rounded-full flex items-center justify-center mt-1">
+                <span className="text-[#121e36] text-base md:text-lg font-semibold font-['Roobert-SemiBold']">
                   {step.number}
-                </div>
+                </span>
               </div>
 
-              <div className="flex flex-col items-start gap-2 relative flex-1 grow">
-                <h3 className="relative self-stretch mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-2xl tracking-[0] leading-[27.8px]">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-white text-xl md:text-2xl font-semibold font-['Roobert-SemiBold']">
                   {step.title}
                 </h3>
-
-                <p className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg tracking-[0] leading-[28.8px]">
+                <p className="text-[#ffffffcc] text-base md:text-lg font-normal font-['Roobert-Regular'] leading-relaxed">
                   {step.description}
                 </p>
               </div>
