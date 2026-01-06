@@ -27,7 +27,7 @@ export const HowItWorksDetailsSection = () => {
   ];
 
   const statistics = [
-    { value: "2–10", description: "Matched offers to compare" },
+    { value: "2-10", description: "Matched offers to compare" },
     { value: "24 hr", description: "Typical decision speed" },
   ];
 
@@ -114,8 +114,8 @@ export const HowItWorksDetailsSection = () => {
             className="flex flex-col items-start justify-center gap-6 px-8 py-6 relative flex-1 self-stretch w-full grow rounded-3xl border border-solid border-[#ffffff17] bg-[linear-gradient(-20deg,rgba(30,47,79,1)_65%,rgba(29,67,67,1)_100%)]"
           >
             <div className="flex items-start gap-3 relative self-stretch w-full flex-[0_0_auto]">
-              <div className="relative w-7 h-7 bg-[#b0efbd] rounded-[39px] overflow-hidden">
-                <div className="absolute top-[calc(50.00%_-_13px)] left-[calc(50.00%_-_5px)] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-base text-center tracking-[0] leading-[25.6px] whitespace-nowrap">
+              <div className="relative w-7 h-7 bg-[#b0efbd] rounded-[39px] overflow-hidden flex items-center justify-center">
+                <div className="[font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-base text-center tracking-[0] leading-none whitespace-nowrap">
                   {step.number}
                 </div>
               </div>

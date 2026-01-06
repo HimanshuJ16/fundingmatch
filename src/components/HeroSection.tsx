@@ -65,8 +65,8 @@ export const HeroSection = () => {
                 key={step.number}
                 className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]"
               >
-                <div className="relative w-6 h-6 bg-[#b0efbd] rounded-[39px] overflow-hidden">
-                  <div className="left-[calc(50.00%_-_3px)] absolute top-[calc(50.00%_-_13px)] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-base text-center tracking-[0] leading-[25.6px] whitespace-nowrap">
+                <div className="relative w-6 h-6 bg-[#b0efbd] rounded-[39px] overflow-hidden flex items-center justify-center">
+                  <div className="[font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-base text-center tracking-[0] leading-none whitespace-nowrap">
                     {step.number}
                   </div>
                 </div>

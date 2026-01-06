@@ -1,6 +1,6 @@
 import React from "react";
 import { HowItWorksHeaderSection } from "./HowItWorksDetailsHeader";
-import { HowItWorksDetailsSection } from "./HowItWorksDetailsDesction";
+import { HowItWorksDetailsSection } from "./HowItWorksDetailsSection";
 import { CallToActionSection } from "./CallToActionSection";
 
 const HowItWorksSection = () => {
