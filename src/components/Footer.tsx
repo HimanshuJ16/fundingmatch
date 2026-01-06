@@ -1,4 +1,3 @@
-
 export const Footer = () => {
   const socialIcons = [
     {
@@ -163,7 +162,9 @@ export const Footer = () => {
                           >
                             <a
                               href={link.href}
-                              className={`block ${index === 0 ? "mt-[-1.00px]" : ""} [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg tracking-[0] leading-[28.8px] hover:text-white transition-colors`}
+                              className={`block ${
+                                index === 0 ? "mt-[-1.00px]" : ""
+                              } [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg tracking-[0] leading-[28.8px] hover:text-white transition-colors`}
                             >
                               {link.label}
                             </a>
@@ -180,11 +181,11 @@ export const Footer = () => {
 
         <div className="flex flex-col items-start gap-2 px-0 py-6 relative self-stretch w-full flex-[0_0_auto] mb-[-150.63px] border-t [border-top-style:solid] border-[#f8f4f133]">
           <div className="flex items-center gap-6 relative self-stretch w-full flex-[0_0_auto]">
-            <p className="relative flex-1 mt-[-1.00px] opacity-50 font-body-16px-regular font-[number:var(--body-16px-regular-font-weight)] text-neutralneutral-02 text-[length:var(--body-16px-regular-font-size)] tracking-[var(--body-16px-regular-letter-spacing)] leading-[var(--body-16px-regular-line-height)] [font-style:var(--body-16px-regular-font-style)]">
+            <p className="relative flex-1 mt-[-1.00px] opacity-50 font-body-16px-regular font-[number:var(--body-16px-regular-font-weight)] text-[#ffffffcc] text-[length:var(--body-16px-regular-font-size)] tracking-[var(--body-16px-regular-letter-spacing)] leading-[var(--body-16px-regular-line-height)] [font-style:var(--body-16px-regular-font-style)]">
               © FundingMatch.ai. All rights reserved.
             </p>
 
-            <p className="relative flex-1 mt-[-1.00px] opacity-50 font-body-16px-regular font-[number:var(--body-16px-regular-font-weight)] text-neutralneutral-02 text-[length:var(--body-16px-regular-font-size)] tracking-[var(--body-16px-regular-letter-spacing)] leading-[var(--body-16px-regular-line-height)] [font-style:var(--body-16px-regular-font-style)]">
+            <p className="relative flex-1 mt-[-1.00px] opacity-50 font-body-16px-regular font-[number:var(--body-16px-regular-font-weight)] text-[#ffffffcc] text-right text-[length:var(--body-16px-regular-font-size)] tracking-[var(--body-16px-regular-letter-spacing)] leading-[var(--body-16px-regular-line-height)] [font-style:var(--body-16px-regular-font-style)]">
               Funding is subject to status, affordability and lender criteria.
               Terms &amp; rates vary.
             </p>

@@ -17,7 +17,7 @@ export const FooterCTA = () => {
   return (
     <div className="relative w-full h-[356px] bg-[#182744]">
       <section
-        className="flex w-[1224px] h-64 items-center justify-between p-[52px] relative top-[50px] left-[108px] rounded-3xl border border-solid border-[#ffffff17] bg-[linear-gradient(295deg,rgba(30,47,79,1)_0%,rgba(29,67,67,1)_100%)]"
+        className="flex w-full max-w-[1224px] h-64 items-center justify-between p-[52px] relative top-[50px] mx-auto rounded-3xl border border-solid border-[#ffffff17] bg-[linear-gradient(-25deg,rgba(30,47,79,1)_30%,rgba(29,67,67,1)_100%)]"
         aria-labelledby="cta-heading"
       >
         <div className="flex flex-col w-[552px] items-start gap-2 relative">
@@ -29,7 +29,7 @@ export const FooterCTA = () => {
           </h2>
 
           <p className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg tracking-[0] leading-[28.8px]">
-            Start a free match — or speak to the team for guidance.
+            Start a free match - or speak to the team for guidance.
           </p>
         </div>
 

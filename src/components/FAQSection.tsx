@@ -1,149 +1,164 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Plus, Minus } from "lucide-react";
+
+interface FaqItemProps {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onClick: () => void;
+}
+
+const FaqItem: React.FC<FaqItemProps> = ({
+  question,
+  answer,
+  isOpen,
+  onClick,
+}) => {
+  return (
+    <div
+      className={`flex flex-col w-full items-start gap-4 p-6 relative bg-[#ffffff0d] rounded-2xl border ${
+        isOpen ? "border-[#cfd296cf]" : "border-[#ffffff17]"
+      } backdrop-blur-[40px] backdrop-brightness-[100%] cursor-pointer transition-all duration-300`}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between w-full relative">
+        <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-Medium',Helvetica] font-medium text-white text-lg tracking-[0] leading-[28.8px]">
+          {question}
+        </div>
+        {isOpen ? (
+          <Minus className="w-5 h-5 text-[#cfd296]" />
+        ) : (
+          <Plus className="w-5 h-5 text-white" />
+        )}
+      </div>
+      {isOpen && (
+        <div className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-base tracking-[0] leading-[25.6px] whitespace-pre-line">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const FAQSection = () => {
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number>(-1);
 
-  const icons = [
-    {
-      src: "https://c.animaapp.com/WGyxBptO/img/vector.svg",
-      alt: "collapse",
-    },
-    {
-      src: "https://c.animaapp.com/WGyxBptO/img/vector-3.svg",
-      alt: "expand",
-    },
-  ]
+  const toggleFaq = (index: number) => {
+    setOpenIndex(openIndex === index ? -1 : index);
+  };
 
-  const faqData = [
+  const faqItems = [
     {
-      id: 0,
       question: "Is FundingMatch.ai a lender?",
       answer:
-        "FundingMatch.ai is a matching platform and brokerage service. We introduce you to suitable lenders based on eligibility and your requirements.",
+        "No. FundingMatch.ai is not a lender. We are a business funding matching platform and brokerage service. We introduce businesses to FCA-regulated lenders based on eligibility, affordability, and funding requirements.",
     },
     {
-      id: 1,
+      question: "How does FundingMatch.ai work?",
+      answer:
+        "You complete a short application, and our AI-powered platform analyses your business profile, income, and trading history. We then match you with lenders most likely to make you a real funding offer, which you can review and choose from.",
+    },
+    {
+      question: "How long does the application take?",
+      answer: "Most applications take around 5 minutes to complete.",
+    },
+    {
       question: "How fast can I get a decision?",
-      answer: "",
+      answer:
+        "Many lenders provide decisions within hours, with most offers received within 24 hours, depending on the product and information provided.",
     },
     {
-      id: 2,
       question: "Will this affect my credit file?",
-      answer: "",
+      answer:
+        "Where possible, we use soft credit checks first, which do not impact your credit score. Some lenders may require a hard check later if you choose to proceed with an offer.",
     },
     {
-      id: 3,
+      question: "What funding amounts can I apply for?",
+      answer:
+        "We support funding options typically ranging from £5,000 up to £500,000, depending on your business profile and eligibility.",
+    },
+    {
+      question: "What types of funding do you support?",
+      answer:
+        "We introduce businesses to a range of funding options, including:\n• Unsecured business loans\n• Merchant cash advances\n• Flexible working capital solutions\n\nAvailability depends on lender criteria and business eligibility.",
+    },
+    {
       question: "What do I need to apply?",
-      answer: "",
+      answer:
+        "You’ll usually need:\n• Basic business details\n• Estimated turnover\n• Time trading\n• Recent business bank statements (requested later if needed)",
+    },
+    {
+      question: "Do I have to accept an offer?",
+      answer:
+        "No. There’s no obligation to proceed. You can review any offers and decide whether or not to continue.",
+    },
+    {
+      question: "Are the lenders you work with regulated?",
+      answer:
+        "Yes. We introduce you to reputable, FCA-regulated lenders and established funding providers.",
+    },
+    {
+      question: "Is FundingMatch.ai suitable for new businesses?",
+      answer:
+        "Eligibility varies by lender. Most lenders require a minimum trading history, but we’ll only match you to lenders where you’re more likely to qualify.",
+    },
+    {
+      question: "Does FundingMatch.ai charge a fee?",
+      answer:
+        "We typically receive a fee from the lender if funding completes. This does not usually affect the rate you’re offered, and we’ll always be transparent about the process.",
+    },
+    {
+      question: "Is my information secure?",
+      answer:
+        "Yes. Your data is handled securely and only shared with lenders when necessary to assess your application.",
+    },
+    {
+      question: "Can I speak to someone for help?",
+      answer:
+        "Yes. Our UK-based team is available if you’d like guidance at any stage of the process.",
     },
   ];
 
-  const toggleFaq = (id: number) => {
-    setExpandedFaq(expandedFaq === id ? null : id);
-  };
+  const firstColumn = faqItems.slice(0, Math.ceil(faqItems.length / 2));
+  const secondColumn = faqItems.slice(Math.ceil(faqItems.length / 2));
 
   return (
-    <div className="relative w-full h-[539px] bg-[#182744]">
-      <div className="flex-col w-[1217px] items-center gap-[68px] top-20 left-[108px] flex relative">
-        <div className="flex-col w-[556px] items-center gap-4 flex-[0_0_auto] flex relative">
-          <h1 className="relative self-stretch mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-5xl text-center tracking-[-1.92px] leading-[55.7px]">
-            FAQ
-          </h1>
+    <div className="flex flex-col w-full items-center gap-[68px] my-20 relative max-w-[1217px] mx-auto px-4">
+      <div className="flex flex-col items-center gap-4 relative self-stretch w-full flex-[0_0_auto] mt-20">
+        <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-5xl text-center tracking-[-1.92px] leading-[55.7px] whitespace-nowrap">
+          Got questions?
+        </div>
+        <p className="relative w-fit [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-xl text-center tracking-[0] leading-[32.0px] whitespace-nowrap">
+          We’ve got answers.
+        </p>
+      </div>
+
+      <div className="flex items-start justify-center gap-6 relative self-stretch w-full flex-[0_0_auto]">
+        <div className="flex flex-col items-start gap-3 relative flex-1 grow">
+          {firstColumn.map((item, index) => (
+            <FaqItem
+              key={index}
+              question={item.question}
+              answer={item.answer}
+              isOpen={openIndex === index}
+              onClick={() => toggleFaq(index)}
+            />
+          ))}
         </div>
 
-        <div className="flex items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
-          <div className="flex-col items-start gap-2 flex-1 grow flex relative">
-            <button
-              className="flex flex-col items-start gap-5 p-6 relative self-stretch w-full flex-[0_0_auto] bg-[#ffffff0a] rounded-2xl border border-solid cursor-pointer"
-              onClick={() => toggleFaq(0)}
-              aria-expanded={expandedFaq === 0}
-              aria-controls="faq-answer-0"
-            >
-              <div className="items-start justify-between self-stretch w-full flex-[0_0_auto] flex relative">
-                <div className="flex-col w-[490px] items-start gap-2 flex relative">
-                  <h2 className="relative self-stretch mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-xl tracking-[0] leading-[23.2px]">
-                    {faqData[0].question}
-                  </h2>
-
-                  {expandedFaq === 0 && (
-                    <p
-                      id="faq-answer-0"
-                      className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg tracking-[0] leading-[28.8px]"
-                    >
-                      {faqData[0].answer}
-                    </p>
-                  )}
-                </div>
-
-                <img
-                  className="relative w-4 h-0.5 mt-[-1.00px] mr-[-1.00px]"
-                  alt={expandedFaq === 0 ? "Collapse" : "Expand"}
-                  src={
-                    expandedFaq === 0 ? icons[0].src : icons[1].src
-                  }
-                />
-              </div>
-            </button>
-
-            <button
-              className="flex items-center justify-between px-6 py-5 relative self-stretch w-full flex-[0_0_auto] bg-[#ffffff0a] rounded-2xl border border-solid cursor-pointer"
-              onClick={() => toggleFaq(1)}
-              aria-expanded={expandedFaq === 1}
-              aria-controls="faq-answer-1"
-            >
-              <h2 className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-xl tracking-[0] leading-[23.2px] whitespace-nowrap">
-                {faqData[1].question}
-              </h2>
-
-              <img
-                className="relative w-4 h-4 mr-[-1.00px]"
-                alt={expandedFaq === 1 ? "Collapse" : "Expand"}
-                src={
-                  expandedFaq === 1 ? icons[0].src : icons[1].src
-                }
+        <div className="flex flex-col items-start gap-3 relative flex-1 grow">
+          {secondColumn.map((item, index) => {
+            const actualIndex = index + firstColumn.length;
+            return (
+              <FaqItem
+                key={actualIndex}
+                question={item.question}
+                answer={item.answer}
+                isOpen={openIndex === actualIndex}
+                onClick={() => toggleFaq(actualIndex)}
               />
-            </button>
-          </div>
-
-          <div className="flex-col items-start gap-2 flex-1 grow flex relative">
-            <button
-              className="flex items-center justify-between px-6 py-5 relative self-stretch w-full flex-[0_0_auto] bg-[#ffffff0a] rounded-2xl border border-solid cursor-pointer"
-              onClick={() => toggleFaq(2)}
-              aria-expanded={expandedFaq === 2}
-              aria-controls="faq-answer-2"
-            >
-              <h2 className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-xl tracking-[0] leading-[23.2px] whitespace-nowrap">
-                {faqData[2].question}
-              </h2>
-
-              <img
-                className="relative w-4 h-4 mr-[-1.00px]"
-                alt={expandedFaq === 2 ? "Collapse" : "Expand"}
-                src={
-                  expandedFaq === 2 ? icons[0].src : icons[1].src
-                }
-              />
-            </button>
-
-            <button
-              className="flex items-center justify-between px-6 py-5 relative self-stretch w-full flex-[0_0_auto] bg-[#ffffff0a] rounded-2xl border border-solid cursor-pointer"
-              onClick={() => toggleFaq(3)}
-              aria-expanded={expandedFaq === 3}
-              aria-controls="faq-answer-3"
-            >
-              <h2 className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-xl tracking-[0] leading-[23.2px] whitespace-nowrap">
-                {faqData[3].question}
-              </h2>
-
-              <img
-                className="relative w-4 h-4 mr-[-1.00px]"
-                alt={expandedFaq === 3 ? "Collapse" : "Expand"}
-                src={
-                  expandedFaq === 3 ? icons[0].src : icons[1].src
-                }
-              />
-            </button>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
