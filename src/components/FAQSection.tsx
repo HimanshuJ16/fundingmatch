@@ -43,7 +43,7 @@ export const FAQSection = () => {
   };
 
   return (
-    <div className="relative w-[1440px] h-[539px] bg-[#182744]">
+    <div className="relative w-full h-[539px] bg-[#182744]">
       <div className="flex-col w-[1217px] items-center gap-[68px] top-20 left-[108px] flex relative">
         <div className="flex-col w-[556px] items-center gap-4 flex-[0_0_auto] flex relative">
           <h1 className="relative self-stretch mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-5xl text-center tracking-[-1.92px] leading-[55.7px]">

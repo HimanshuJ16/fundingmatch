@@ -38,7 +38,7 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="relative w-[1440px] h-[670px] bg-[#182744]">
+    <footer className="relative w-full[1440px] h-[670px] bg-[#182744]">
       <div className="flex flex-col w-[1224px] h-[439px] items-start gap-[72px] relative top-[calc(50.00%_-_255px)] left-[calc(50.00%_-_612px)]">
         <div className="flex items-center gap-[162px] relative self-stretch w-full flex-[0_0_auto] mb-[-3.63px]">
           <div className="flex flex-col w-[1224px] items-start gap-8 relative">
