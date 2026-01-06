@@ -16,9 +16,8 @@ const FaqItem: React.FC<FaqItemProps> = ({
 }) => {
   return (
     <div
-      className={`flex flex-col w-full items-start gap-4 p-6 relative bg-[#ffffff0d] rounded-2xl border ${
-        isOpen ? "border-[#cfd296cf]" : "border-[#ffffff17]"
-      } backdrop-blur-[40px] backdrop-brightness-[100%] cursor-pointer transition-all duration-300`}
+      className={`flex flex-col w-full items-start gap-4 p-6 relative bg-[#ffffff0d] rounded-2xl border ${isOpen ? "border-[#cfd296cf]" : "border-[#ffffff17]"
+        } backdrop-blur-[40px] backdrop-brightness-[100%] cursor-pointer transition-all duration-300`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between w-full relative">
@@ -123,7 +122,7 @@ export const FAQSection = () => {
   const secondColumn = faqItems.slice(Math.ceil(faqItems.length / 2));
 
   return (
-    <div className="flex flex-col w-full items-center gap-[68px] my-20 relative max-w-[1217px] mx-auto px-4">
+    <div className="flex flex-col w-full items-center gap-[68px] my-10 relative max-w-[1217px] mx-auto px-4">
       <div className="flex flex-col items-center gap-4 relative self-stretch w-full flex-[0_0_auto] mt-20">
         <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-5xl text-center tracking-[-1.92px] leading-[55.7px] whitespace-nowrap">
           Got questions?
