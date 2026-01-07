@@ -1,22 +1,22 @@
 export const Footer = () => {
   const socialIcons = [
     {
-      src: "https://c.animaapp.com/WGyxBptO/img/social-icons.svg",
+      src: "assets/twitter.png",
       alt: "Twitter",
       href: "#twitter",
     },
     {
-      src: "https://c.animaapp.com/WGyxBptO/img/social-icons-1.svg",
+      src: "assets/facebook.png",
       alt: "Facebook",
       href: "#facebook",
     },
     {
-      src: "https://c.animaapp.com/WGyxBptO/img/instagram-1.svg",
+      src: "assets/instagram.png",
       alt: "Instagram",
       href: "#instagram",
     },
     {
-      src: "https://c.animaapp.com/WGyxBptO/img/vector-4.svg",
+      src: "assets/linkedin.png",
       alt: "LinkedIn",
       href: "#linkedin",
     },
@@ -44,7 +44,7 @@ export const Footer = () => {
           <img
             className="w-[180px] md:w-[222px] h-auto"
             alt="FundingMatch.ai Logo"
-            src="https://c.animaapp.com/WGyxBptO/img/group-1-1@2x.png"
+            src="assets/logo.png"
           />
           <p className="max-w-[962px] text-[#ffffffcc] text-base md:text-lg leading-relaxed [font-family:'Roobert-Regular',Helvetica]">
             FundingMatch.ai is not a lender. We operate as a business funding

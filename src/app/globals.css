@@ -2,17 +2,17 @@
 
 @font-face {
   font-family: "Roobert-Regular";
-  src: url("https://anima-uploads.s3.amazonaws.com/5963acbdff6ca0000c98ef8d/Roobert-Regular.otf") format("opentype");
+  src: url("https://www.fundingmatch.ai/fonts/Roobert-Regular.otf") format("opentype");
 }
 
 @font-face {
   font-family: "Roobert-Medium";
-  src: url("https://anima-uploads.s3.amazonaws.com/5963acbdff6ca0000c98ef8d/Roobert-Medium.otf") format("opentype");
+  src: url("https://www.fundingmatch.ai/fonts/Roobert-Medium.otf") format("opentype");
 }
 
 @font-face {
   font-family: "Roobert-SemiBold";
-  src: url("https://anima-uploads.s3.amazonaws.com/5963acbdff6ca0000c98ef8d/Roobert-SemiBold.otf") format("opentype");
+  src: url("https://www.fundingmatch.ai/fonts/Roobert-SemiBold.otf") format("opentype");
 }
 
 @layer components {

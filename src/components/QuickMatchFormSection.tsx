@@ -17,7 +17,7 @@ export const QuickMatchFormSection = () => {
                 <img
                   className="w-full h-full object-contain"
                   alt="Clock Icon"
-                  src="https://c.animaapp.com/onoPc7cE/img/iconamoon-clock-fill.svg"
+                  src="assets/clock.png"
                 />
               </div>
 
@@ -32,7 +32,7 @@ export const QuickMatchFormSection = () => {
                   <img
                     className="absolute inset-0 w-full h-full object-contain"
                     alt="AI Icon"
-                    src="https://c.animaapp.com/onoPc7cE/img/mingcute-ai-fill.svg"
+                    src="assets/ai.png"
                   />
                 </div>
               </div>

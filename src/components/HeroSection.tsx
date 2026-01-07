@@ -84,7 +84,7 @@ export const HeroSection = () => {
         </section>
 
         <div className="w-full lg:w-auto flex justify-center lg:block">
-          {/* <QuickMatchFormSection /> */}
+          <QuickMatchFormSection />
         </div>
       </div>
     </div>

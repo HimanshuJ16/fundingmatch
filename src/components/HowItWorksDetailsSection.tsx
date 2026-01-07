@@ -11,17 +11,17 @@ export const HowItWorksDetailsSection = () => {
     {
       id: 1,
       label: "Application",
-      arrow: "https://c.animaapp.com/WGyxBptO/img/arrow-3.svg",
+      arrow: "assets/arrow.png",
     },
     {
       id: 2,
       label: "AI Match",
-      arrow: "https://c.animaapp.com/WGyxBptO/img/arrow-3.svg",
+      arrow: "assets/arrow.png",
     },
     {
       id: 3,
       label: "Lenders",
-      arrow: "https://c.animaapp.com/WGyxBptO/img/arrow-3.svg",
+      arrow: "assets/arrow.png",
     },
     { id: 4, label: "Offers", arrow: null },
   ];
@@ -81,9 +81,9 @@ export const HowItWorksDetailsSection = () => {
             </div>
 
             <img
-              src="https://c.animaapp.com/WGyxBptO/img/arrow-3.svg"
+              src="assets/arrow.png"
               alt="Arrow"
-              className="w-6 sm:w-8 h-auto object-contain"
+              className="w-7 sm:w-14 h-auto object-contain"
             />
 
             <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">
@@ -98,9 +98,9 @@ export const HowItWorksDetailsSection = () => {
             </div>
 
             <img
-              src="https://c.animaapp.com/WGyxBptO/img/arrow-3.svg"
+              src="assets/arrow.png"
               alt="Arrow"
-              className="w-6 sm:w-8 h-auto object-contain"
+              className="w-7 sm:w-14 h-auto object-contain"
             />
 
             <div className="flex items-center justify-center w-[110px] h-[80px] sm:w-[130px] sm:h-[90px] bg-[#cfd296cf] rounded-[40px] border border-dashed border-[#9da25a] text-[#191d05] font-['Roobert-Regular'] text-sm sm:text-base">

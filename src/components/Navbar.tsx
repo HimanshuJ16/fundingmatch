@@ -17,7 +17,7 @@ const Navbar = () => {
           <img
             className="w-[120px] md:w-[137px] h-auto object-contain"
             alt="Funding Match AI Logo"
-            src="https://c.animaapp.com/onoPc7cE/img/group-1@2x.png"
+            src="assets/logo.png"
           />
         </a>
 
