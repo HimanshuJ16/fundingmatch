@@ -124,7 +124,7 @@ export const Footer = () => {
               <ul className="flex flex-col gap-3 opacity-60">
                 <li>
                   <a
-                    href="/terms"
+                    href="/terms-of-business"
                     className="text-lg text-[#ffffffcc] hover:text-white transition-colors font-['Roobert-Regular',Helvetica]"
                   >
                     Terms of Business

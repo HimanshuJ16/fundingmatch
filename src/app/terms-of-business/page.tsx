@@ -2,12 +2,12 @@ import React from "react";
 
 const TermsPage = () => {
   return (
-    <div className="bg-white min-h-screen text-[#182744] font-sans">
+    <div className=" min-h-screen bg-[#182744] text-white font-sans">
       <div className="container mx-auto px-4 py-16 max-w-[960px]">
         <h1 className="text-4xl md:text-5xl font-bold mb-8 font-['Roobert-SemiBold',Helvetica]">
           Terms of Business
         </h1>
-        <p className="text-lg text-[#182744] opacity-70 mb-12">
+        <p className="text-lg text-white opacity-70 mb-12">
           Last updated: {new Date().toLocaleDateString("en-GB", { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
 
