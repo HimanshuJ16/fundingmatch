@@ -86,10 +86,10 @@ export const Footer = () => {
                 <p>
                   <span className="text-[#ffffffcc]">Phone: </span>
                   <a
-                    href="tel:01622000000"
+                    href="tel:01622910234"
                     className="text-white hover:underline transition-colors"
                   >
-                    01622 000000
+                    01622 910234
                   </a>
                 </p>
               </div>
