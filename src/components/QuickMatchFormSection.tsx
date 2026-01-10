@@ -84,6 +84,15 @@ export const QuickMatchFormSection = () => {
           Get started
         </div>
       </button>
+
+      {/* Backdrop Blur Overlay */}
+      <div className="absolute inset-0 z-50 backdrop-blur-[4px] rounded-[32px] md:p-8 p-6 flex items-center justify-center">
+        <div className="box-border flex w-full sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[160px] relative flex-[0_0_auto] rounded-[29px] bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] shadow-lg rotate-[-12deg]">
+          <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-SemiBold',Helvetica] font-bold text-[#121e36] text-[40px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
+            COMING SOON
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
