@@ -41,11 +41,7 @@ export const FundingAmountStep = () => {
           <label className="text-white text-sm font-medium font-['Roobert-Regular',Helvetica]">Enter Amount</label>
           <div className="relative">
             <span
-              className="absolute -translate-y-1/2 text-white font-medium text-lg"
-              style={{ 
-                left: "20px",
-                top: "22%", 
-              }}
+              className="absolute -translate-y-1/2 text-white font-medium text-lg left-5 top-1/2"
             >
               £
             </span>
