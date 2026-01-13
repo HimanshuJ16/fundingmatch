@@ -37,6 +37,11 @@ export const quickMatchSchema = z.object({
   consentCreditCheck: z.boolean().refine(val => val === true, {
     message: "You must consent to the credit check to proceed"
   }),
+
+  // Step 7: Bank Statements
+  // We'll validate the presence of files in the component or use custom validation if needed.
+  // Storing as any for now to hold FileList or Array<File>
+  bankStatements: z.any().optional(),
 });
 
 export type QuickMatchFormData = z.infer<typeof quickMatchSchema>;

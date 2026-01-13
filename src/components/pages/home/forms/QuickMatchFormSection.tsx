@@ -11,9 +11,12 @@ import { SoleTraderPersonalDetailsStep } from "./steps/SoleTraderPersonalDetails
 import { ContactDetailsStep } from "./steps/ContactDetailsStep";
 import { FundingAmountStep } from "./steps/FundingAmountStep";
 import { CreditCheckStep } from "./steps/CreditCheckStep";
+import { BankStatementsStep } from "./steps/BankStatementsStep";
+import { ConfirmationStep } from "./steps/ConfirmationStep";
 
 export const QuickMatchFormSection = () => {
   const [step, setStep] = useState(1);
+  const [matchResult, setMatchResult] = useState<"matched" | "no_match" | null>(null);
   const methods = useForm<QuickMatchFormData>({
     resolver: zodResolver(quickMatchSchema),
     mode: "onChange",
@@ -55,26 +58,45 @@ export const QuickMatchFormSection = () => {
       if (isValid) setStep(6);
     } else if (step === 6) {
       isValid = await trigger("consentCreditCheck");
-      if (isValid) {
-        console.log("Form Completed", methods.getValues());
-        // TODO: Trigger API call here
-        try {
-          const formData = methods.getValues();
-          const res = await fetch("/api/credit-check", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            console.log("Credit check result:", data);
-            // Handle success (e.g. redirect to quotes)
-          } else {
-            console.error("Credit check failed");
+      if (isValid) setStep(7);
+    } else if (step === 7) {
+      // Validate bank statements (optional but recommended to check if user really wants to skip if empty)
+      // For now, allow next/submit. If specific validation needed, trigger here.
+      console.log("Form Completed", methods.getValues());
+
+      // TODO: Handle File Upload + Data Submission
+      // Note: File objects in 'bankStatements' need FormData to send to API.
+      // Below is a placeholder for the logic.
+      try {
+        const formData = new FormData();
+        const values = methods.getValues();
+
+        // Append regular fields
+        (Object.keys(values) as Array<keyof typeof values>).forEach(key => {
+          if (key !== 'bankStatements' && values[key] !== undefined) {
+            formData.append(key, values[key] as string | Blob);
           }
-        } catch (e) {
-          console.error("Error submitting form", e);
+        });
+
+        // Append files
+        const files = values.bankStatements as File[];
+        if (files && files.length > 0) {
+          files.forEach((file: File) => formData.append('bankStatements', file));
         }
+
+        console.log("Submitting formData", formData);
+
+        // Mock API success + decision
+        // For demonstration, we'll assume a successful match
+        // In reality, this would be determined by the API response
+        setTimeout(() => {
+          setMatchResult("matched");
+          setStep(8);
+        }, 1500);
+
+        // const res = await fetch("/api/application", { method: "POST", body: formData });
+      } catch (e) {
+        console.error(e);
       }
     }
   };
@@ -191,6 +213,24 @@ export const QuickMatchFormSection = () => {
             <CreditCheckStep />
           </>
         );
+      case 7:
+        return (
+          <>
+            <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
+              <p className="relative self-stretch -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-xl md:text-2xl tracking-[0] leading-snug">
+                Bank statements
+              </p>
+              <p className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-md md:text-base tracking-[0] leading-snug">
+                Upload your business bank statements
+              </p>
+            </div>
+            <BankStatementsStep />
+          </>
+        );
+      case 8:
+        return (
+          <ConfirmationStep status={matchResult || "matched"} />
+        );
       default:
         return null;
     }
@@ -198,7 +238,8 @@ export const QuickMatchFormSection = () => {
 
   const getButtonText = () => {
     if (step === 1) return "Get started";
-    if (step === 6) return "See my quotes";
+    if (step === 7) return "See my quotes";
+    if (step === 8) return "Back to Home"; // Or hide button entirely
     return "Continue";
   };
 
@@ -254,17 +295,17 @@ export const QuickMatchFormSection = () => {
         <div className="relative self-stretch w-full h-2 bg-[#ffffff1f] rounded-[25px] overflow-hidden">
           <div
             className="h-2 bg-[#b0efbd] transition-all duration-300 ease-in-out"
-            style={{ width: `${(step / 6) * 100}%` }}
+            style={{ width: `${(step > 7 ? 100 : (step / 7) * 100)}%` }}
           />
         </div>
 
         <div className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-base text-center tracking-[0] leading-snug">
-          Step {step} of 6
+          Step {step > 7 ? 7 : step} of 7
         </div>
       </div>
 
       <button
-        onClick={handleNext}
+        onClick={step === 8 ? () => window.location.reload() : handleNext}
         type="button"
         className="all-[unset] box-border flex w-full sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative flex-[0_0_auto] rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity"
       >
