@@ -21,7 +21,7 @@ export const CreditCheckStep = () => {
           </li>
         </ul>
       </div>
-      <p className="font-['Roobert-Regular',Helvetica] text-xs text-[#ffffffcc] mt-1">
+      <p className="font-['Roobert-Regular',Helvetica] text-sm text-[#ffffffcc] mt-1">
         This is a soft check only and <strong>will not impact your credit score</strong>.
       </p>
       <label className="flex items-start w-full gap-3 p-4 rounded-xl border border-[#ffffff33] cursor-pointer hover:bg-[#ffffff0a] transition-colors relative group">
