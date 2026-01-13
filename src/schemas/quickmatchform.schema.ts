@@ -32,6 +32,11 @@ export const quickMatchSchema = z.object({
   // Step 5: Funding Amount (Common)
   fundingAmount: z.string().optional(),
   fundingAmountCustom: z.string().optional(),
+
+  // Step 6: Credit Check Consent
+  consentCreditCheck: z.boolean().refine(val => val === true, {
+    message: "You must consent to the credit check to proceed"
+  }),
 });
 
 export type QuickMatchFormData = z.infer<typeof quickMatchSchema>;

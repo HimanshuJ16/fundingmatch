@@ -10,6 +10,7 @@ import { DirectorDetailsStep } from "./steps/DirectorDetailsStep";
 import { SoleTraderPersonalDetailsStep } from "./steps/SoleTraderPersonalDetailsStep";
 import { ContactDetailsStep } from "./steps/ContactDetailsStep";
 import { FundingAmountStep } from "./steps/FundingAmountStep";
+import { CreditCheckStep } from "./steps/CreditCheckStep";
 
 export const QuickMatchFormSection = () => {
   const [step, setStep] = useState(1);
@@ -18,6 +19,7 @@ export const QuickMatchFormSection = () => {
     mode: "onChange",
     defaultValues: {
       homeOwnerStatus: false,
+      consentCreditCheck: false,
     }
   });
 
@@ -50,8 +52,29 @@ export const QuickMatchFormSection = () => {
       if (isValid) setStep(5);
     } else if (step === 5) {
       isValid = await trigger(["fundingAmount", "fundingAmountCustom"]);
+      if (isValid) setStep(6);
+    } else if (step === 6) {
+      isValid = await trigger("consentCreditCheck");
       if (isValid) {
         console.log("Form Completed", methods.getValues());
+        // TODO: Trigger API call here
+        try {
+          const formData = methods.getValues();
+          const res = await fetch("/api/credit-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            console.log("Credit check result:", data);
+            // Handle success (e.g. redirect to quotes)
+          } else {
+            console.error("Credit check failed");
+          }
+        } catch (e) {
+          console.error("Error submitting form", e);
+        }
       }
     }
   };
@@ -154,6 +177,20 @@ export const QuickMatchFormSection = () => {
             <FundingAmountStep />
           </>
         );
+      case 6:
+        return (
+          <>
+            <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
+              <p className="relative self-stretch -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-xl md:text-2xl tracking-[0] leading-snug">
+                Credit Check Consent
+              </p>
+              <p className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-md md:text-base tracking-[0] leading-snug">
+                We need your permission to proceed
+              </p>
+            </div>
+            <CreditCheckStep />
+          </>
+        );
       default:
         return null;
     }
@@ -161,7 +198,7 @@ export const QuickMatchFormSection = () => {
 
   const getButtonText = () => {
     if (step === 1) return "Get started";
-    if (step === 5) return "See my quotes";
+    if (step === 6) return "See my quotes";
     return "Continue";
   };
 
@@ -217,12 +254,12 @@ export const QuickMatchFormSection = () => {
         <div className="relative self-stretch w-full h-2 bg-[#ffffff1f] rounded-[25px] overflow-hidden">
           <div
             className="h-2 bg-[#b0efbd] transition-all duration-300 ease-in-out"
-            style={{ width: `${(step / 5) * 100}%` }}
+            style={{ width: `${(step / 6) * 100}%` }}
           />
         </div>
 
-        <div className="relative self-stretch [\font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-base text-center tracking-[0] leading-snug">
-          Step {step} of 5
+        <div className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-base text-center tracking-[0] leading-snug">
+          Step {step} of 6
         </div>
       </div>
 
