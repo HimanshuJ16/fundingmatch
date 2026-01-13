@@ -1,0 +1,134 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useFormContext } from "react-hook-form";
+
+interface Officer {
+  name: string;
+  date_of_birth?: {
+    year: number;
+    month: number;
+  };
+  appointed_on?: string;
+  officer_role: string;
+}
+
+export const DirectorDetailsStep = () => {
+  const { setValue, watch, register, formState: { errors } } = useFormContext();
+  const companyNumber = watch("companyRegistrationNumber");
+  const [directors, setDirectors] = useState<Officer[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (companyNumber) {
+      setLoading(true);
+      fetch(`/api/companies-house/officers?companyNumber=${companyNumber}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.items) {
+            // Filter for active directors if needed, currently taking all
+            setDirectors(data.items);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch officers", err))
+        .finally(() => setLoading(false));
+    }
+  }, [companyNumber]);
+
+  const [showDropdown, setShowDropdown] = useState(false);
+  const selectedDirector = watch("directorName");
+
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      <div className="flex flex-col gap-2 relative">
+        <label className="text-white text-sm font-medium font-['Roobert-Regular',Helvetica]">Select Director</label>
+        {loading ? (
+          <div className="text-gray-300 text-sm">Loading directors...</div>
+        ) : directors.length > 0 ? (
+          <>
+            <div
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-full bg-[#ffffff0a] border border-[#ffffff33] rounded-xl px-4 py-3 text-white cursor-pointer flex items-center justify-between"
+            >
+              <span className={selectedDirector ? "text-white" : "text-gray-400"}>
+                {selectedDirector || "Select a director..."}
+              </span>
+              <div className={`w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+            </div>
+
+            {showDropdown && (
+              <div
+                className="absolute z-60 w-full top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl"
+                style={{
+                  backgroundColor: "#111827",
+                  maxHeight: "280px",
+                  overflowY: "auto",
+                }}
+              >
+                {directors.map((director, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setValue("directorName", director.name);
+                      setShowDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-white transition-colors border-b border-gray-800 last:border-0 hover:bg-slate-700 focus:bg-slate-700 outline-none"
+                  >
+                    <div className="font-semibold text-sm tracking-wide">{director.name}</div>
+                    <div className="text-xs text-gray-400 font-normal leading-relaxed">{director.officer_role}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <input
+            {...register("directorName")}
+            placeholder="Enter director name"
+            className="w-full bg-[#ffffff0a] border border-[#ffffff33] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#ffffff66]"
+          />
+        )}
+        {errors.directorName && (
+          <p className="text-red-400 text-xs mt-1">{String(errors.directorName.message)}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-white text-sm font-medium font-['Roobert-Regular',Helvetica]">Date of Birth</label>
+        <input
+          type="date"
+          {...register("directorDateOfBirth")}
+          className="w-full bg-[#ffffff0a] border border-[#ffffff33] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#ffffff66] scheme-dark"
+        />
+        {errors.directorDateOfBirth && (
+          <p className="text-red-400 text-xs mt-1">{String(errors.directorDateOfBirth.message)}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-white text-sm font-medium font-['Roobert-Regular',Helvetica]">Residential Address</label>
+        <input
+          {...register("residentialAddress")}
+          placeholder="Enter residential address"
+          className="w-full bg-[#ffffff0a] border border-[#ffffff33] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#ffffff66]"
+        />
+        {errors.residentialAddress && (
+          <p className="text-red-400 text-xs mt-1">{String(errors.residentialAddress.message)}</p>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 mt-2">
+        <input
+          type="checkbox"
+          id="homeOwnerStatus"
+          {...register("homeOwnerStatus")}
+          className="w-5 h-5 rounded border-gray-400 bg-[#ffffff0a] text-blue-600 focus:ring-blue-500"
+        />
+        <label htmlFor="homeOwnerStatus" className="text-white text-sm font-['Roobert-Regular',Helvetica]">
+          I am a homeowner
+        </label>
+      </div>
+    </div>
+  );
+};
