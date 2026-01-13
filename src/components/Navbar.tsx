@@ -31,7 +31,7 @@ const Navbar = () => {
               <a
                 key={index}
                 href={link.href}
-                className="relative w-fit mt-[-1.00px] [font-family:'Roobert-Regular',Helvetica] font-normal text-white text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap hover:opacity-80 transition-opacity"
+                className="relative w-fit -mt-px font-['Roobert-Regular',Helvetica] font-normal text-white text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap hover:opacity-80 transition-opacity"
               >
                 {link.label}
               </a>
@@ -43,7 +43,7 @@ const Navbar = () => {
             type="button"
             aria-label="Get started"
           >
-            <div className="relative w-fit mt-[-1.00px] [font-family:'Roobert-Medium',Helvetica] font-medium text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
+            <div className="relative w-fit -mt-px font-['Roobert-Medium',Helvetica] font-medium text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
               Get started
             </div>
           </button>
