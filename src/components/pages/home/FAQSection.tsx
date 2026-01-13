@@ -20,11 +20,11 @@ const FaqItem: React.FC<FaqItemProps> = ({
     <div
       className={`flex flex-col w-full items-start gap-4 p-6 relative bg-[#ffffff0d] rounded-2xl border ${
         isOpen ? "border-[#cfd296cf]" : "border-[#ffffff17]"
-      } backdrop-blur-[40px] backdrop-brightness-[100%] cursor-pointer transition-all duration-300 hover:bg-[#ffffff1a]`}
+      } backdrop-blur-2xl backdrop-brightness-100 cursor-pointer transition-all duration-300 hover:bg-[#ffffff1a]`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between w-full relative">
-        <h3 className="w-full pr-4 [font-family:'Roobert-Medium',Helvetica] font-medium text-white text-lg leading-snug">
+        <h3 className="w-full pr-4 font-['Roobert-Medium',Helvetica] font-medium text-white text-lg leading-snug">
           {question}
         </h3>
         {isOpen ? (
@@ -34,7 +34,7 @@ const FaqItem: React.FC<FaqItemProps> = ({
         )}
       </div>
       {isOpen && (
-        <div className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-base leading-relaxed whitespace-pre-line">
+        <div className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-base leading-relaxed whitespace-pre-line">
           {answer}
         </div>
       )}
@@ -103,10 +103,10 @@ export const FAQSection = () => {
   return (
     <div className="flex flex-col w-full items-center gap-12 lg:gap-[68px] my-10 py-12 relative max-w-7xl mx-auto px-4">
       <div className="flex flex-col items-center gap-4 relative self-stretch w-full">
-        <h2 className="[font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-3xl md:text-5xl text-center tracking-tight leading-tight">
+        <h2 className="font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-3xl md:text-5xl text-center tracking-tight leading-tight">
           Got questions?
         </h2>
-        <p className="[font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg md:text-xl text-center leading-relaxed">
+        <p className="font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg md:text-xl text-center leading-relaxed">
           We’ve got answers.
         </p>
       </div>

@@ -23,12 +23,12 @@ export const FooterCTA = () => {
         <div className="flex flex-col w-full lg:max-w-xl items-start gap-4 p-2 relative z-10">
           <h2
             id="cta-heading"
-            className="relative w-full [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-3xl md:text-[40px] tracking-tight leading-tight md:leading-[46.4px]"
+            className="relative w-full font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-3xl md:text-[40px] tracking-tight leading-tight md:leading-[46.4px]"
           >
             Ready to see your best options?
           </h2>
 
-          <p className="relative self-stretch [font-family:'Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg leading-relaxed">
+          <p className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-lg leading-relaxed">
             Start a free match — or speak to the team for guidance.
           </p>
         </div>
@@ -48,8 +48,8 @@ export const FooterCTA = () => {
               <span
                 className={
                   button.variant === "primary"
-                    ? "relative w-fit [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap"
-                    : "relative w-fit [font-family:'Roobert-SemiBold',Helvetica] font-semibold text-white text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap"
+                    ? "relative w-fit font-['Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap"
+                    : "relative w-fit font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap"
                 }
               >
                 {button.text}
