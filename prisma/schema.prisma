@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model QuickMatchApplication {
+  id           String @id @default(uuid())
+  businessType String // "LIMITED_COMPANY" | "SOLE_TRADER"
+
+  // --- Limited Company Fields (Step 2) ---
+  companyName       String?
+  companyNumber     String?
+  registeredAddress String?
+
+  // --- Sole Trader Fields (Step 2) ---
+  personalName String?
+  tradingName  String?
+  timeTrading  String?
+
+  // --- Sole Trader Personal Details (Step 3) ---
+  soleTraderAddress   String?
+  soleTraderDob       DateTime?
+  soleTraderHomeowner Boolean?
+
+  // --- Contact Details (Step 4) ---
+  email        String
+  mobileNumber String
+
+  // --- Funding Amount (Step 5) ---
+  fundingAmount Decimal
+
+  // --- Credit Check (Step 6) ---
+  creditCheckConsent Boolean @default(false)
+
+  // --- Bank Statements (Step 7) ---
+  bankStatementUrls String[] // Array of file paths/URLs
+
+  // --- Confirmation (Step 8) ---
+  status String @default("PENDING") // MATCHED, REJECTED, PENDING
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation for Limited Company Directors (Step 3)
+  directors Director[]
+}
+
+model Director {
+  id            String                @id @default(uuid())
+  applicationId String
+  application   QuickMatchApplication @relation(fields: [applicationId], references: [id])
+
+  firstName          String
+  lastName           String
+  residentialAddress String
+  dob                DateTime
+  homeowner          Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

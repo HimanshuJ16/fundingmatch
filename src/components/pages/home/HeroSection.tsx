@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { QuickMatchFormSection } from "./QuickMatchFormSection";
+import { QuickMatchFormSection } from "./forms/QuickMatchFormSection";
 
 export const HeroSection = () => {
   const [selectedBusinessType, setSelectedBusinessType] = useState<
