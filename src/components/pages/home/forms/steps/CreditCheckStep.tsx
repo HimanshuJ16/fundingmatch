@@ -29,7 +29,7 @@ export const CreditCheckStep = () => {
           <input
             type="checkbox"
             {...register("consentCreditCheck")}
-            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#ffffff66] bg-[#ffffff0a] checked:bg-[#b0efbd] checked:border-[#b0efbd] transition-all"
+            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#ffffff66] bg-[#ffffff0a] checked:border-[#b0efbd] transition-all"
           />
         </div>
         <div className="flex flex-col gap-1">
