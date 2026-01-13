@@ -29,22 +29,8 @@ export const CreditCheckStep = () => {
           <input
             type="checkbox"
             {...register("consentCreditCheck")}
-            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#ffffff66] bg-[#ffffff0a] checked:bg-[#b0efbd] checked:border-[#b0efbd] transition-all"
+            className="w-5 h-5 rounded border-gray-400 bg-[#ffffff0a] text-blue-600 focus:ring-blue-500"
           />
-          <svg
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-[#121e36] opacity-0 peer-checked:opacity-100 transition-opacity"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-['Roobert-SemiBold',Helvetica] text-white text-md">
