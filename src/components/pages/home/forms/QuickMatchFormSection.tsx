@@ -276,7 +276,7 @@ export const QuickMatchFormSection = () => {
   return (
     <div
       className="flex flex-col w-full max-w-lg lg:max-w-[600px] justify-between items-center gap-6 p-6 md:p-8 relative rounded-[32px] border-[none] bg-[linear-gradient(325deg,rgba(40,60,100,1)_60%,rgba(59,124,126,1)_100%)] before:content-[''] before:absolute before:inset-0 before:p-px before:rounded-[32px] before:[background:linear-gradient(142deg,rgba(40,60,100,1)_60%,rgba(59,124,126,1)_100%) before:[-webkit-mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] before:[-webkit-mask-composite:xor] before:mask-exclude before:z-1 before:pointer-events-none shadow-2xl"
-      style={{ width: "500px" }}
+      style={{ width: "480px" }}
     >
       <div className="flex flex-col items-start gap-6 md:gap-8 relative self-stretch w-full flex-1">
         <div className="flex flex-col w-full items-start gap-5 relative flex-[0_0_auto]">
