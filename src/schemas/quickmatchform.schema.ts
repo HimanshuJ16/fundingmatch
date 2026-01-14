@@ -50,9 +50,9 @@ export const quickMatchSchema = z.object({
   }),
 
   // Step 7: Bank Statements
-  // We'll validate the presence of files in the component or use custom validation if needed.
-  // Storing as any for now to hold FileList or Array<File>
-  bankStatements: z.any().optional(),
+  bankStatementMethod: z.enum(["upload", "link"]).optional(), // Defaults to 'upload' or user selects
+  bankStatements: z.any().optional(), // For manual uploads
+  openBankingLinked: z.boolean().optional(), // For checking if link was successful
 }).superRefine((data, ctx) => {
   if (data.fundingAmount === "Custom" && (!data.fundingAmountCustom || data.fundingAmountCustom.trim() === "")) {
     ctx.addIssue({
@@ -60,6 +60,17 @@ export const quickMatchSchema = z.object({
       message: "Please enter a custom amount",
       path: ["fundingAmountCustom"],
     });
+  }
+
+  // Bank Statement Validation
+  // If method is 'upload', we need at least one file (validation typically done in UI for File objects, but we can check here if we store something)
+  // If method is 'link', we need openBankingLinked to be true
+  // Note: Since this is STEP 7, and the form is one big schema, we might only check this if we are effectively 'at' or 'past' step 7,
+  // but Zod validates the whole object. For a multi-step wizard, we oftentimes validate only relevant fields per step.
+  // We'll leave the rigorous "required" checks for the step navigation logic or refining here if strictly needed.
+
+  if (data.bankStatementMethod === 'link' && !data.openBankingLinked) {
+    // Logic handled in UI mostly, but could add issue here if submitting
   }
 });
 
