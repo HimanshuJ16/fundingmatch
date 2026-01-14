@@ -11,7 +11,7 @@ export const FundingAmountStep = () => {
   const [showCustom, setShowCustom] = useState(selectedAmount === "Custom");
 
   const handleAmountSelect = (value: string) => {
-    setValue("fundingAmount", value);
+    setValue("fundingAmount", value, { shouldValidate: true });
     setShowCustom(value === "Custom");
   };
 

@@ -295,12 +295,12 @@ export const QuickMatchFormSection = () => {
         <div className="relative self-stretch w-full h-2 bg-[#ffffff1f] rounded-[25px] overflow-hidden">
           <div
             className="h-2 bg-[#b0efbd] transition-all duration-300 ease-in-out"
-            style={{ width: `${(step > 7 ? 100 : (step / 7) * 100)}%` }}
+            style={{ width: `${(step / 8) * 100}%` }}
           />
         </div>
 
         <div className="relative self-stretch font-['Roobert-Regular',Helvetica] font-normal text-[#ffffffcc] text-sm md:text-base text-center tracking-[0] leading-snug">
-          Step {step > 7 ? 7 : step} of 7
+          Step {step} of 8
         </div>
       </div>
 

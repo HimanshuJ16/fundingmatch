@@ -57,9 +57,9 @@ export const BusinessDetailsStep = () => {
 
   const selectCompany = (company: Company) => {
     isSelectionRef.current = true;
-    setValue("companyName", company.title);
-    setValue("companyRegistrationNumber", company.company_number);
-    setValue("registeredAddress", company.address_snippet);
+    setValue("companyName", company.title, { shouldValidate: true });
+    setValue("companyRegistrationNumber", company.company_number, { shouldValidate: true });
+    setValue("registeredAddress", company.address_snippet, { shouldValidate: true });
     setQuery(company.title);
     setShowDropdown(false);
   };
@@ -158,7 +158,7 @@ export const BusinessDetailsStep = () => {
                     key={option}
                     type="button"
                     onClick={() => {
-                      setValue("timeTrading", option);
+                      setValue("timeTrading", option, { shouldValidate: true });
                       setShowTimeTradingDropdown(false);
                     }}
                     className="w-full text-left px-4 py-3 text-white transition-colors border-b border-gray-800 last:border-0 hover:bg-slate-700 focus:bg-slate-700 outline-none"

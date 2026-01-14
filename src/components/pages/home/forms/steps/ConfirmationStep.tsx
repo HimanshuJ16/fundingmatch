@@ -11,7 +11,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ status }) =>
   const isMatched = status === "matched";
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6 w-full py-6 bg-[#ffffff1a] rounded-xl border border-[#ffffff33]">
+    <div className="flex flex-col items-center justify-center gap-6 w-full py-10 bg-[#ffffff0a] rounded-xl border border-[#ffffff33]">
       <div className={`p-5 rounded-full ${isMatched ? "bg-[#b0efbd]/20" : "bg-red-500/20"}`} style={{ backgroundColor: isMatched ? "rgba(176, 239, 189, 0.2)" : "rgba(239, 68, 68, 0.2)" }}>
         {isMatched ? (
           <CheckCircle className="w-12 h-12 text-[#b0efbd]" />

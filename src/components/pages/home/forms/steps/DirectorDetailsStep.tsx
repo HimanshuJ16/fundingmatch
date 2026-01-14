@@ -70,7 +70,7 @@ export const DirectorDetailsStep = () => {
                     key={idx}
                     type="button"
                     onClick={() => {
-                      setValue("directorName", director.name);
+                      setValue("directorName", director.name, { shouldValidate: true });
                       setShowDropdown(false);
                     }}
                     className="w-full text-left px-4 py-3 text-white transition-colors border-b border-gray-800 last:border-0 hover:bg-slate-700 focus:bg-slate-700 outline-none"
