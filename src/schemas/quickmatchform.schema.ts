@@ -5,9 +5,10 @@ export const quickMatchSchema = z.object({
   businessType: z.enum(["limited_company", "sole_trader", "partnership", "other"]).optional(), // Adjust based on actual values
 
   // Step 2: Business Details (Limited Company)
-  companyName: z.string().optional(),
-  companyRegistrationNumber: z.string().optional(),
-  registeredAddress: z.string().optional(),
+  // Step 2: Business Details (Limited Company)
+  companyName: z.string().min(1, "Company name is required"),
+  companyRegistrationNumber: z.string().min(1, "Company number is required"),
+  registeredAddress: z.string().min(1, "Address is required"),
 
   // Step 2: Business Details (Sole Trader)
   firstName: z.string().optional(),

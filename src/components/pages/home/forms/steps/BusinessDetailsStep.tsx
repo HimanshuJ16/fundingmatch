@@ -27,6 +27,11 @@ export const BusinessDetailsStep = () => {
         return;
       }
 
+      // Clear selection when user types
+      setValue("companyName", "");
+      setValue("companyRegistrationNumber", "");
+      setValue("registeredAddress", "");
+
       if (query.trim().length > 2) {
         setIsSearching(true);
         try {
@@ -105,7 +110,7 @@ export const BusinessDetailsStep = () => {
           </div>
 
           <div className="flex flex-col gap-2 w-full relative">
-            <label 
+            <label
               className="text-white text-sm font-medium font-['Roobert-Regular',Helvetica]"
               style={{ letterSpacing: "0.1px" }}
             >
