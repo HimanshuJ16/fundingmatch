@@ -11,13 +11,16 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@ideal-postcodes/address-finder": "^5.2.6",
     "@prisma/client": "^6.19.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
+    "plaid": "^41.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.0",
+    "react-plaid-link": "^4.1.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5"
   },
