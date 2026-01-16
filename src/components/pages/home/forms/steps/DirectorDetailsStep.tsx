@@ -42,10 +42,10 @@ export const DirectorDetailsStep = () => {
     if (!shouldRenderAddressFinder.current) return;
     shouldRenderAddressFinder.current = false;
 
-    if (process.env.IDEAL_POSTCODES_API_KEY) {
+    if (process.env.NEXT_PUBLIC_IDEAL_POSTCODES_API_KEY) {
       AddressFinder.watch({
         inputField: "#director-address-search",
-        apiKey: process.env.IDEAL_POSTCODES_API_KEY,
+        apiKey: process.env.NEXT_PUBLIC_IDEAL_POSTCODES_API_KEY,
         checkKey: true,
         defaultCountry: "GBR",
         restrictCountries: ["GBR"],
