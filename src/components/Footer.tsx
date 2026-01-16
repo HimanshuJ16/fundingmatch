@@ -71,6 +71,12 @@ export const Footer = () => {
                   <br />
                   Maidstone, Kent, ME15 6JZ
                 </span>
+                <p>
+                  <span className="text-[#ffffffcc]">Company Number: </span>
+                  <span className="text-white hover:underline transition-colors">
+                    ZC078854
+                  </span>
+                </p>
               </div>
 
               <div className="flex flex-col gap-2 text-base md:text-lg font-['Roobert-Regular',Helvetica]">
