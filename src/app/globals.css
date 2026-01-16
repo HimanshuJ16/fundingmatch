@@ -146,3 +146,26 @@
     transform: translateY(calc(-100% - var(--gap)));
   }
 }
+
+/* Ideal Postcodes Address Finder Styles */
+
+/* Hover state for list items */
+.idpc_li:hover,
+.idpc_li.idpc_highlight {
+  background-color: #1f2937 !important;
+  /* hover:bg-gray-800 */
+}
+
+/* Force ALL text inside the dropdown to be white (includes suggestions, prompts, errors) */
+.idpc_ul,
+.idpc_ul *,
+.idpc_li,
+.idpc_li * {
+  color: white !important;
+}
+
+/* Ensure padding for all list items including status messages */
+.idpc_ul li,
+.idpc_li {
+  padding: 0.75rem 1rem !important;
+}
