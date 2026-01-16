@@ -1,18 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
+import { usePlaidLink } from "react-plaid-link";
 import { QuickMatchFormData } from "@/schemas/quickmatchform.schema";
 
 export const BankStatementsStep = () => {
   const { register, setValue, watch, formState: { errors } } = useFormContext<QuickMatchFormData>();
   const [method, setMethod] = useState<"upload" | "link">("upload");
   const [files, setFiles] = useState<File[]>([]);
-  const [isLinking, setIsLinking] = useState(false);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState(false);
 
   // Sync method with form state
   useEffect(() => {
     setValue("bankStatementMethod", method);
   }, [method, setValue]);
+
+  // Generate Link Token when method is set to "link"
+  useEffect(() => {
+    if (method === "link" && !linkToken) {
+      const generateToken = async () => {
+        try {
+          const response = await fetch("/api/plaid/create_link_token", {
+            method: "POST",
+          });
+          const data = await response.json();
+          setLinkToken(data.link_token);
+        } catch (error) {
+          console.error("Error generating link token:", error);
+        }
+      };
+      generateToken();
+    }
+  }, [method, linkToken]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -30,19 +49,36 @@ export const BankStatementsStep = () => {
     setValue("bankStatements", newFiles);
   };
 
-  const handleConnectBank = () => {
-    setIsLinking(true);
-    // Simulate API call / Plaid Link
-    setTimeout(() => {
-      setIsLinking(false);
-      setIsLinked(true);
-      setValue("openBankingLinked", true);
-    }, 2000);
-  };
+  const onSuccess = React.useCallback(async (public_token: string) => {
+    try {
+      const response = await fetch("/api/plaid/exchange_public_token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ public_token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsLinked(true);
+        setValue("openBankingLinked", true);
+        setValue("plaidConnectionId", data.connection_id);
+      }
+    } catch (error) {
+      console.error("Error exchanging public token:", error);
+    }
+  }, [setValue]);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess,
+  });
 
   const handleDisconnect = () => {
     setIsLinked(false);
     setValue("openBankingLinked", false);
+    // You might want to generate a new link token here or reuse logic
   };
 
   return (
@@ -141,20 +177,22 @@ export const BankStatementsStep = () => {
 
               <button
                 type="button"
-                onClick={handleConnectBank}
-                disabled={isLinking}
-                className="flex items-center justify-center gap-2 px-6 py-3 w-full bg-[#121e36] text-white rounded-xl hover:bg-[#1a2b4d] transition-colors border border-[#ffffff33]"
+                onClick={() => open()}
+                disabled={!ready}
+                className="flex items-center justify-center gap-2 px-6 py-3 w-full bg-[#121e36] text-white rounded-xl hover:bg-[#1a2b4d] transition-colors border border-[#ffffff33] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLinking ? (
+                {!linkToken ? (
                   <>
                     <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
-                    <span>Connecting...</span>
+                    <span>Initializing...</span>
                   </>
                 ) : (
-                  <span className="font-['Roobert-SemiBold',Helvetica]">Connect Bank Account</span>
+                  <span className="font-['Roobert-SemiBold',Helvetica]">
+                    {ready ? "Connect Bank Account" : "Loading..."}
+                  </span>
                 )}
               </button>
 

@@ -53,6 +53,7 @@ export const quickMatchSchema = z.object({
   bankStatementMethod: z.enum(["upload", "link"]).optional(), // Defaults to 'upload' or user selects
   bankStatements: z.any().optional(), // For manual uploads
   openBankingLinked: z.boolean().optional(), // For checking if link was successful
+  plaidConnectionId: z.string().optional(), // ID from `PlaidConnection` table
 }).superRefine((data, ctx) => {
   if (data.fundingAmount === "Custom" && (!data.fundingAmountCustom || data.fundingAmountCustom.trim() === "")) {
     ctx.addIssue({

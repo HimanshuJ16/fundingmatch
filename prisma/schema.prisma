@@ -47,6 +47,21 @@ model QuickMatchApplication {
 
   // Relation for Limited Company Directors (Step 3)
   directors Director[]
+
+  // --- Plaid Connection (Step 7) ---
+  plaidConnectionId String?          @unique
+  plaidConnection   PlaidConnection? @relation(fields: [plaidConnectionId], references: [id])
+}
+
+model PlaidConnection {
+  id          String @id @default(uuid())
+  accessToken String
+  itemId      String
+
+  application QuickMatchApplication?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Director {
