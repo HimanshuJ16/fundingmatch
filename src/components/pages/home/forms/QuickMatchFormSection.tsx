@@ -133,6 +133,13 @@ export const QuickMatchFormSection = () => {
 
   const handleBusinessTypeSelection = (type: string) => {
     setValue("businessType", type as any);
+    setStep(2);
+  };
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   const renderStepContent = () => {
@@ -334,15 +341,29 @@ export const QuickMatchFormSection = () => {
         </div>
       </div>
 
-      <button
-        onClick={step === 8 ? () => window.location.reload() : handleNext}
-        type="button"
-        className="all-[unset] box-border flex w-full sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative flex-[0_0_auto] rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity"
-      >
-        <div className="relative w-fit -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
-          {getButtonText()}
+      {step !== 1 && step !== 8 && (
+        <div className="flex w-full items-center justify-center gap-3 md:gap-4">
+          <button
+            onClick={handleBack}
+            type="button"
+            className="all-[unset] box-border flex w-full sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative flex-[0_0_auto] rounded-[29px] overflow-hidden bg-[#ffffff0a] border border-solid border-[#ffffff33] hover:bg-[#ffffff1a] cursor-pointer transition-all"
+          >
+            <div className="relative w-fit -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-white text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
+              Back
+            </div>
+          </button>
+
+          <button
+            onClick={step === 8 ? () => window.location.reload() : handleNext}
+            type="button"
+            className="all-[unset] box-border flex w-full sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative flex-[0_0_auto] rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity"
+          >
+            <div className="relative w-fit -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
+              {getButtonText()}
+            </div>
+          </button>
         </div>
-      </button>
+      )}
     </div>
   );
 };
