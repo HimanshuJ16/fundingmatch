@@ -11,12 +11,15 @@ interface Company {
 
 export const BusinessDetailsStep = () => {
   const { setValue, watch, register, formState: { errors } } = useFormContext();
-  const [query, setQuery] = useState("");
+  const currentCompanyName = watch("companyName");
+  const [query, setQuery] = useState(currentCompanyName || "");
   const [results, setResults] = useState<Company[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showTimeTradingDropdown, setShowTimeTradingDropdown] = useState(false);
-  const isSelectionRef = React.useRef(false);
+
+  // Initialize as true if we have a value, so we don't clear it on mount
+  const isSelectionRef = React.useRef(!!currentCompanyName);
 
   // Debounce search
   useEffect(() => {
