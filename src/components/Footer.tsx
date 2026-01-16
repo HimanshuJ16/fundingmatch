@@ -72,7 +72,7 @@ export const Footer = () => {
                   Maidstone, Kent, ME15 6JZ
                 </span>
                 <p>
-                  <span className="text-[#ffffffcc]">Company Number: </span>
+                  <span className="text-[#ffffffcc]">ICO Registration Number: </span>
                   <span className="text-white hover:underline transition-colors">
                     ZC078854
                   </span>
