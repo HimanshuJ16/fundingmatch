@@ -1,0 +1,901 @@
+openapi: |-
+  3.0.0
+info:
+  title: Risk Scores API
+  version: 3.0.2
+  description: >-
+    The Risk Scores API gives access to a set of scores to assess the health of a
+    business to help determine its financial position. These can be integrated into
+    onboarding or customer management systems to easily gain an up-to-date picture
+    of your businesses. 
+servers:
+  - url: https://sandbox-uk-api.experian.com/risk/business/v3/scores
+    description: Sandbox
+x-commonErrorResponses: &commonErrorResponses
+  400:
+    $ref: '#/components/responses/BadRequest'
+  401:
+    $ref: '#/components/responses/Unauthorized'
+  403:
+    $ref: '#/components/responses/Forbidden'
+  404:
+    $ref: '#/components/responses/NotFound'
+  405:
+    $ref: '#/components/responses/MethodNotAllowed'
+  406:
+    $ref: '#/components/responses/InvalidHeader'
+  422:
+    $ref: '#/components/responses/UnprocessableEntity'
+  429:
+    $ref: '#/components/responses/TooManyRequests'
+  500:
+    $ref: '#/components/responses/InternalServerError'
+  502:
+    $ref: '#/components/responses/BadGateway'
+  503:
+    $ref: '#/components/responses/ServiceUnavailable'
+paths:
+  /limitedcompany/{RegNumber}/dws:
+    get:
+      summary: >-
+        Distress Warning Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Distress Warning Score (DWS) which aims to predict
+        imminent company failure over the following 3 to 6 months.
+
+        The response includes a current numeric score.
+
+        The DWS ranges from 1 to 20, where 1 indicates high risk, 20 is low risk.
+
+        The score is only available for registered companies with trade credit payment
+        performance information.
+
+
+        Sample searches using RegNumber=99999999 will work in the Sandbox.
+      operationId: getDistressWarningScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/RegNumberPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with latest DWS.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistressWarningScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/DistressWarningScoreResponseModel'
+        <<: *commonErrorResponses
+  /limitedcompany/{RegNumber}/fss:
+    get:
+      summary: >-
+        Financial Strength Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Financial Strength Score (FSS) which rates the financial
+        strength of a registered company and aims to predict insolvency over the following
+        12 months.
+
+        The response includes a current numeric score and a band value, along with
+        a 12 month historical view where available.
+
+        The Financial Strength Score ranges from 1 to 100, where 1 indicates high
+        risk, 100 low risk.
+
+        The score is based primarily on annual filed accounts so does not exist for
+        non-registered entities. Companies who have not yet submitted a set of accounts
+        are not likely to be scored.
+
+
+        Sample searches using RegNumber=99999999 will work in the Sandbox.
+      operationId: getFinancialStrengthScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/RegNumberPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with latest FSS and 12-month FSS history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialStrengthScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/FinancialStrengthScoreResponseModel'
+        <<: *commonErrorResponses
+  /limitedcompany/{RegNumber}/delphicashflow:
+    get:
+      summary: >-
+        Limited (Registered) Delphi Cashflow Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Commercial Delphi Cashflow Score for registered
+        businesses which aims to predict arrears and defaults over the following 12
+        months.
+
+        The response includes a current numeric score and a Commercial Delphi Cashflow
+        scorecard used to score the business.
+
+        The Commercial Delphi Cashflow Score ranges from 1 to 100, where 1 indicates
+        high risk, 100 low risk.
+
+        The score is based on a unique combination of data assets including current
+        account cashflow, credit agreement performance and utilisation, trade credit
+        payment performance and publicly available information. 
+
+        Due to the use of data from Commercial Credit Account Information Sharing
+        (CAIS) and Commercial Credit Data Sharing (CCDS) schemes within the Delphi
+        Cashflow Score access to the endpoint is restricted to those eligible to use
+        this information.
+
+
+        Sample searches using RegNumber=99999999 will work in the Sandbox.
+      operationId: getLimited(Registered)DelphiCashflowScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/RegNumberPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with Delphi Cashflow Score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LtdDelphiCashflowScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/LtdDelphiCashflowScoreResponseModel'
+        <<: *commonErrorResponses
+  /nonlimitedcompany/{NonLimitedKey}/delphicashflow:
+    get:
+      summary: >-
+        Non-limited (Non-Registered) Delphi Cashflow Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Commercial Delphi Cashflow Score for non-registered
+        businesses which aims to predict arrears and defaults over the following 12
+        months.
+
+        The response includes a current numeric score and a Commercial Delphi Cashflow
+        scorecard used to score the business.
+
+        The Commercial Delphi Cashflow Score ranges from 1 to 100, where 1 indicates
+        high risk, 100 low risk.
+
+        The score is based on a unique combination of data assets including current
+        account cashflow, credit agreement performance and utilisation, trade credit
+        payment performance and publicly available information. 
+
+        Due to the use of data from Commercial Credit Account Information Sharing
+        (CAIS) and Commercial Credit Data Sharing (CCDS) schemes within the Delphi
+        Cashflow Score access to the endpoint is restricted to those eligible to use
+        this information.
+
+
+        Sample searches using NonLimitedKey=UI88888888 will work in the Sandbox.
+      operationId: getNon-limited(Non-Registered)DelphiCashflowScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/NonLimitedKeyPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with Delphi Cashflow Score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonLtdDelphiCashflowScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/NonLtdDelphiCashflowScoreResponseModel'
+        <<: *commonErrorResponses
+  /limitedcompany/{RegNumber}/commercialdelphiscore:
+    get:
+      summary: >-
+        Limited (Registered) Commercial Delphi Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Commercial Delphi Score, credit rating and credit
+        limit for registered businesses. The Commercial Delphi Score aims to predict
+        company closure over the following 12 months.
+
+        The response includes a current score, credit rating and limit, along with
+        a 12 month historical view where available.
+
+        The Commercial Delphi Score ranges from 1 to 100, where 1 indicates high risk,
+        100 low risk.
+
+        The score is based on a combination of public and non-public information including
+        filed accounts, county court judgments, directors' information, trade credit
+        payment performance and directors' consumer scores.
+
+
+        Sample searches using RegNumber=99999999 will work in the Sandbox.
+      operationId: getLimited(Registered)CommercialDelphiScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/RegNumberPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with latest Commercial Delphi Details and Commercial
+            Delphi Score 12-month history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LtdCommercialDelphiScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/LtdCommercialDelphiScoreResponseModel'
+        <<: *commonErrorResponses
+  /nonlimitedcompany/{NonLimitedKey}/commercialdelphiscore:
+    get:
+      summary: >-
+        Non-limited (Non-Registered) Commercial Delphi Score
+      security:
+        - OAuth2PasswordGrantFlow: []
+      description: >-
+        This endpoint returns the Commercial Delphi Score, credit rating and credit
+        limit for non-registered businesses. The Commercial Delphi Score aims to predict
+        company closure over the following 12 months.
+
+        The response includes a current score, credit rating and limit, along with
+        a 12 month historical view where available.
+
+        The Delphi Score ranges from 1 to 100, where 1 indicates high risk, 100 low
+        risk.
+
+        The score is based on a combination of public and non-public information including
+        county court judgments, bankruptcies, and trade credit payment performance.
+
+
+        Sample searches using NonLimitedKey=UI88888888 will work in the Sandbox.
+      operationId: getNon-limited(Non-Registered)CommercialDelphiScore
+      tags:
+        - Risk Scores
+      parameters:
+        - $ref: '#/components/parameters/NonLimitedKeyPathParameterModel1'
+        - $ref: '#/components/parameters/X-Correlation-IDHeaderParameterModel1'
+      responses:
+        200:
+          description: >-
+            Business matched with latest Commercial Delphi Details and Commercial
+            Delphi Score 12-month history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonLtdCommercialDelphiScoreResponseModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/NonLtdCommercialDelphiScoreResponseModel'
+        <<: *commonErrorResponses
+components:
+  securitySchemes:
+    OAuth2PasswordGrantFlow:
+      type: oauth2
+      description: >-
+        Please see https://developer.experian.com/tutorials/oauth-20-tutorial for
+        examples.
+      flows:
+        password:
+          tokenUrl: /oauth2/v1/token
+          scopes: {}
+  responses:
+    BadRequest:
+      description: >-
+        Bad Request - Incorrect parameters provided.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: >-
+        Unauthorized - Invalid or expired token, or product not enabled against the
+        account.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: >-
+        Forbidden - The resource is not activated for the account.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: >-
+        Not Found - The server is not able to find the resource. The URI is incorrect,
+        i.e. could be referring to a non-existent endpoint, or the company registration
+        (for registered companies) or the Experian Non-registered key (for non-registered
+        businesses) does not exist or is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MethodNotAllowed:
+      description: >-
+        Method Not Allowed - Unsupported HTTP method/verb.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InvalidHeader:
+      description: >-
+        Invalid Header - Typically caused by a missing or invalid Accept header, these
+        must be supplied and end with "/json" or "/xml".
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableEntity:
+      description: >-
+        Unprocessable Entity - An otherwise well-formed request contains semantic
+        (validation) errors.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: >-
+        Too Many Requests - The client has submitted too many requests and is now
+        subject to rate limiting (throttling) or the client account has exceeded its
+        API callout quota. Please contact your Experian account manager.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: >-
+        Internal Server Error - The server encountered an unexpected error.  This
+        has been logged, please contact support.
+
+
+        *To help us trace the issue, please provide the `X-Correlation-ID` received
+        in the "header" of the error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadGateway:
+      description: >-
+        Bad Gateway - This can occur when the backend response is too large to be
+        sent across in a single transaction. Please try requesting less data per transaction
+        if met with this error.
+
+
+        *To help us trace the issue, please provide the `X-Correlation-ID` received
+        in the "header" of the error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: >-
+        Service Unavailable - The service is temporarily unavailable.
+
+
+        *To help us trace the issue, please provide the `X-Correlation-ID` received
+        in the "header" of the error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        Error:
+          type: object
+          properties:
+            Code:
+              type: integer
+              description: API error response code.
+            Message:
+              type: string
+              description: API error message.
+            MoreInfo:
+              type: string
+              description: Additional information to support developers.
+    DistressWarningScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - DWS
+        - RegNumber
+      additionalProperties: false
+      properties:
+        RegNumber:
+          $ref: '#/components/schemas/FieldSchemas/properties/RegNumberSchemaModel1'
+        DWS:
+          type: object
+          nullable: false
+          required:
+            - DistressScore
+          additionalProperties: false
+          properties:
+            DistressScore:
+              $ref: '#/components/schemas/FieldSchemas/properties/DistressScoreSchemaModel1'
+    FinancialStrengthScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - FSS
+        - FSSHistory
+        - RegNumber
+      additionalProperties: false
+      properties:
+        RegNumber:
+          $ref: '#/components/schemas/FieldSchemas/properties/RegNumberSchemaModel1'
+        FSS:
+          type: object
+          nullable: false
+          additionalProperties: false
+          properties:
+            FSSDate:
+              $ref: '#/components/schemas/FieldSchemas/properties/FSSDateSchemaModel1'
+            FinancialScore:
+              $ref: '#/components/schemas/FieldSchemas/properties/FinancialScoreSchemaModel1'
+            FSSBand:
+              $ref: '#/components/schemas/FieldSchemas/properties/FSSBandSchemaModel1'
+        FSSHistory:
+          type: array
+          nullable: false
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              FSSDate:
+                $ref: '#/components/schemas/FieldSchemas/properties/FSSDateSchemaModel2'
+              FinancialScore:
+                $ref: '#/components/schemas/FieldSchemas/properties/FinancialScoreSchemaModel1'
+              FSSBand:
+                $ref: '#/components/schemas/FieldSchemas/properties/FSSBandSchemaModel1'
+    LtdDelphiCashflowScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - RegNumber
+        - DelphiCashflowScorecard
+        - DelphiCashflowScore
+      additionalProperties: false
+      properties:
+        RegNumber:
+          $ref: '#/components/schemas/FieldSchemas/properties/RegNumberSchemaModel1'
+        DelphiCashflowScorecard:
+          $ref: '#/components/schemas/FieldSchemas/properties/DelphiCashflowScorecardSchemaModel1'
+        DelphiCashflowScore:
+          $ref: '#/components/schemas/FieldSchemas/properties/DelphiCashflowScoreSchemaModel1'
+    NonLtdDelphiCashflowScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - NonLimitedKey
+        - DelphiCashflowScorecard
+        - DelphiCashflowScore
+      additionalProperties: false
+      properties:
+        NonLimitedKey:
+          $ref: '#/components/schemas/FieldSchemas/properties/NonLimitedKeySchemaModel1'
+        DelphiCashflowScorecard:
+          $ref: '#/components/schemas/FieldSchemas/properties/DelphiCashflowScorecardSchemaModel1'
+        DelphiCashflowScore:
+          $ref: '#/components/schemas/FieldSchemas/properties/DelphiCashflowScoreSchemaModel1'
+    LtdCommercialDelphiScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - CommercialDelphiHistory
+        - CommercialDelphi
+        - BusinessRef
+      additionalProperties: false
+      properties:
+        BusinessRef:
+          $ref: '#/components/schemas/FieldSchemas/properties/BusinessRefSchemaModel1'
+        CommercialDelphi:
+          type: object
+          nullable: false
+          additionalProperties: false
+          properties:
+            CommDelphiScore:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiScoreSchemaModel1'
+            CommDelphiBand:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiBandSchemaModel1'
+            CommDelphiBandText:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiBandTextSchemaModel1'
+            StabilityOdds:
+              $ref: '#/components/schemas/FieldSchemas/properties/StabilityOddsSchemaModel1'
+            OverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/OverrideIndicatorSchemaModel1'
+            CreditRating:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingSchemaModel1'
+            CreditRatingOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingOverrideIndicatorSchemaModel1'
+            CreditLimit:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitSchemaModel1'
+            CreditLimitOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitOverrideIndicatorSchemaModel1'
+            ParentIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/ParentIndicatorSchemaModel1'
+            CreditTextOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditTextOverrideIndicatorSchemaModel1'
+            ConclusionText:
+              $ref: '#/components/schemas/FieldSchemas/properties/ConclusionTextSchemaModel1'
+        CommercialDelphiHistory:
+          type: array
+          nullable: false
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              ScoreHistoryDate:
+                $ref: '#/components/schemas/FieldSchemas/properties/ScoreHistoryDateSchemaModel1'
+              OverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/OverrideIndicatorSchemaModel1'
+              CommDelphiScore:
+                $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiScoreSchemaModel1'
+              CreditRatingOverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingOverrideIndicatorSchemaModel1'
+              CreditRating:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingSchemaModel1'
+              CreditLimitOverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitOverrideIndicatorSchemaModel1'
+              CreditLimit:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitSchemaModel1'
+    NonLtdCommercialDelphiScoreResponseModel:
+      type: object
+      nullable: false
+      required:
+        - CommercialDelphiHistory
+        - CommercialDelphi
+        - BusinessRef
+      additionalProperties: false
+      properties:
+        BusinessRef:
+          $ref: '#/components/schemas/FieldSchemas/properties/BusinessRefSchemaModel2'
+        CommercialDelphi:
+          type: object
+          nullable: true
+          additionalProperties: false
+          properties:
+            CommDelphiScore:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiScoreSchemaModel1'
+            CommDelphiBand:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiBandSchemaModel1'
+            CommDelphiBandText:
+              $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiBandTextSchemaModel1'
+            StabilityOdds:
+              $ref: '#/components/schemas/FieldSchemas/properties/StabilityOddsSchemaModel1'
+            OverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/OverrideIndicatorSchemaModel1'
+            CreditRating:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingSchemaModel1'
+            CreditRatingOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingOverrideIndicatorSchemaModel1'
+            CreditLimit:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitSchemaModel1'
+            CreditLimitOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitOverrideIndicatorSchemaModel1'
+            CreditText:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditTextSchemaModel1'
+            CreditTextOverrideIndicator:
+              $ref: '#/components/schemas/FieldSchemas/properties/CreditTextOverrideIndicatorSchemaModel1'
+            ConclusionText:
+              $ref: '#/components/schemas/FieldSchemas/properties/ConclusionTextSchemaModel1'
+        CommercialDelphiHistory:
+          type: array
+          nullable: false
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              ScoreHistoryDate:
+                $ref: '#/components/schemas/FieldSchemas/properties/ScoreHistoryDateSchemaModel1'
+              OverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/OverrideIndicatorSchemaModel1'
+              CommDelphiScore:
+                $ref: '#/components/schemas/FieldSchemas/properties/CommDelphiScoreSchemaModel1'
+              CreditRatingOverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingOverrideIndicatorSchemaModel1'
+              CreditRating:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditRatingSchemaModel1'
+              CreditLimitOverrideIndicator:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitOverrideIndicatorSchemaModel1'
+              CreditLimit:
+                $ref: '#/components/schemas/FieldSchemas/properties/CreditLimitSchemaModel1'
+    FieldSchemas:
+      type: object
+      properties:
+        BusinessRefSchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            Company Registration Number (CRN).
+          maxLength: 8
+        BusinessRefSchemaModel2:
+          type: string
+          nullable: false
+          description: >-
+            Experian Non limited URN (prefixed UI + 8 digits).
+          pattern: |-
+            UI[0-9]{8}
+          maxLength: 10
+        CommDelphiBandSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Current Commercial Delphi band code for the company.
+          maxLength: 1
+        CommDelphiBandTextSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Current Commercial Delphi band text for the company.
+          maxLength: 70
+        CommDelphiScoreSchemaModel1:
+          type: integer
+          nullable: true
+          description: >-
+            Current Commercial Delphi score for the company.
+          maxLength: 3
+        CommercialDelphiHistorySchemaModel1:
+          type: array
+          items:
+            type: object
+            nullable: false
+          description: >-
+            .
+        CommercialDelphiSchemaModel1:
+          type: object
+          nullable: true
+          description: >-
+            .
+        ConclusionTextSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Credit Text conclusion.
+          maxLength: 300
+        CreditLimitOverrideIndicatorSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Limit Override Indicator at Delphi Snapshot Date - Y = Overridden; N = Not Overridden.
+          maxLength: 1
+        CreditLimitSchemaModel1:
+          type: integer
+          nullable: true
+          description: >-
+            Commercial Delphi Limit at Delphi Snapshot Date.
+          maxLength: 15
+        CreditRatingOverrideIndicatorSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Rating Override Indicator at Delphi Snapshot Date - Y = Overridden; N = Not Overridden.
+          maxLength: 1
+        CreditRatingSchemaModel1:
+          type: integer
+          nullable: true
+          description: >-
+            Commercial Delphi Rating at Delphi Snapshot Date.
+          maxLength: 15
+        CreditTextOverrideIndicatorSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Credit Text Override indicator - Y = Overridden; N = Not overridden.
+          maxLength: 1
+        CreditTextSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Explanation text providing supporting information on the Delphi score.
+          maxLength: 560
+        DWSSchemaModel1:
+          type: object
+          nullable: false
+          description: >-
+            DWS.
+        DelphiCashflowScoreSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Delphi cashflow score between 1 to 100 (1 is low risk, 100 is high risk)
+
+            This may be null if a score could not be calculated due to required data
+            being unavailable.
+          maxLength: 3
+        DelphiCashflowScorecardSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            The variant of the scoring model used to generate the score.
+
+            This may be null if a score could not be calculated due to required data
+            being unavailable.
+          maxLength: 4
+        DistressScoreSchemaModel1:
+          type: integer
+          nullable: true
+          description: >-
+            Distress Score: 1 to 20 (1 is high risk, 20 is low risk).
+          minimum: 1
+          maximum: 20
+          maxLength: 2
+        FSSBandSchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            Source code (populated for "own record" queries). Always begins with 9.
+          maxLength: 3
+        FSSDateSchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            Date of each score yyyy-mm-dd.
+
+            This will be provided for each score - latest and historical (historical;
+            FSS scores over the last 12 months,
+
+            date per monthly score).
+          pattern: |-
+            [0-9]{4}-[0-9]{2}-[0-9]{2}
+          maxLength: 10
+        FSSDateSchemaModel2:
+          type: string
+          nullable: false
+          description: >-
+            Date of each score yyyy-mm.
+
+            This will be provided for each score - latest and historical (historical;
+            FSS scores over the last 12 months,
+
+            date per monthly score).
+          pattern: |-
+            [0-9]{4}-[0-9]{2}
+          maxLength: 7
+        FSSHistorySchemaModel1:
+          type: array
+          items:
+            type: object
+            nullable: false
+          description: >-
+            .
+        FSSSchemaModel1:
+          type: object
+          nullable: false
+          description: >-
+            .
+        FinancialScoreSchemaModel1:
+          type: integer
+          nullable: false
+          description: >-
+            1 to 100 (1 is high risk, 100 is low risk).
+
+            This will provide a latest and a historical score (historical; FSS scores
+            over the last 12 months, with a score per month).
+          minimum: 1
+          maximum: 100
+          maxLength: 3
+        NonLimitedKeySchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            Experian Non limited URN (prefixed UI + 8 digits).
+          pattern: |-
+            UI[0-9]{8}
+          maxLength: 10
+        OverrideIndicatorSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Current Commercial Delphi score manual override indicator - Y = Overridden; N = Not overridden.
+          maxLength: 1
+        ParentIndicatorSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Refer to parent indicator - Y = Refer to parent company; N = Don't refer to parent company.
+          maxLength: 1
+        RegNumberSchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            Company Registration Number (CRN).
+          maxLength: 8
+        ScoreHistoryDateSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Date of each score yyyy-mm-dd.
+
+            This will be provided for each score - latest and historical.
+          pattern: |-
+            [0-9]{4}-[0-9]{2}-[0-9]{2}
+          maxLength: 10
+        StabilityOddsSchemaModel1:
+          type: string
+          nullable: true
+          description: >-
+            Current Stability odds for the company.
+          maxLength: 10
+        X-Correlation-IDSchemaModel1:
+          type: string
+          nullable: false
+          description: >-
+            A unique identifier for correlating requests between the client and server.
+          format: |-
+            uuid
+  parameters:
+    NonLimitedKeyPathParameterModel1:
+      in: path
+      name: NonLimitedKey
+      required: true
+      schema:
+        $ref: '#/components/schemas/FieldSchemas/properties/NonLimitedKeySchemaModel1'
+    RegNumberPathParameterModel1:
+      in: path
+      name: RegNumber
+      required: true
+      schema:
+        $ref: '#/components/schemas/FieldSchemas/properties/RegNumberSchemaModel1'
+    X-Correlation-IDHeaderParameterModel1:
+      in: header
+      name: X-Correlation-ID
+      required: false
+      schema:
+        $ref: '#/components/schemas/FieldSchemas/properties/X-Correlation-IDSchemaModel1'
