@@ -12,10 +12,10 @@ export const SoleTraderPersonalDetailsStep = () => {
     if (!shouldRender.current) return;
     shouldRender.current = false;
 
-    if (process.env.IDEAL_POSTCODES_API_KEY) {
+    if (process.env.NEXT_PUBLIC_IDEAL_POSTCODES_API_KEY) {
       AddressFinder.watch({
         inputField: "#sole-trader-address-search",
-        apiKey: process.env.IDEAL_POSTCODES_API_KEY,
+        apiKey: process.env.NEXT_PUBLIC_IDEAL_POSTCODES_API_KEY,
         checkKey: true,
         defaultCountry: "GBR",
         restrictCountries: ["GBR"],
