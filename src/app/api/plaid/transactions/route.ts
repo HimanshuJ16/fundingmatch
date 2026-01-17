@@ -75,8 +75,120 @@ export async function POST(req: Request) {
 
 
       // --- 2. Lender Repayment Detection ---
-      const repaymentKeywords = ["loan", "capital", "finance", "iwoca", "funding circle", "youlend", "libis", "credit", "amigo"];
-      // Add more specific UK lender names as needed
+      const repaymentKeywords = [
+        // Generic finance terms (high recall)
+        "loan",
+        "repayment",
+        "instalment",
+        "installment",
+        "instlmnt",
+        "emi",
+        "credit",
+        "finance",
+        "financing",
+        "lending",
+        "capital",
+        "advance",
+        "agreement",
+        "settlement",
+        "debt",
+        "borrow",
+            
+        // UK business lenders / MCA
+        "iwoca",
+        "funding circle",
+        "youlend",
+        "libis",
+        "fleximize",
+        "esme loans",
+        "marketfinance",
+        "thincats",
+        "capify",
+        "worldpay advance",
+        "tide cashflow",
+        "nucleus commercial finance",
+        "boost capital",
+        "just cashflow",
+        "365 finance",
+        "lombard",
+        "bibby",
+        "white oak",
+        "ultimate finance",
+        "shawbrook",
+        "allica",
+        "close brothers",
+        "paragon",
+        "metro bank business loan",
+        "hsbc business loan",
+        "barclays business loan",
+        "lloyds business loan",
+        "natwest business loan",
+        "santander business loan",
+            
+        // Personal lenders
+        "zopa",
+        "ratesetter",
+        "rate setter",
+        "amigo",
+        "koyo",
+        "118 118 money",
+        "oakbrook",
+        "drafty",
+        "lending stream",
+        "sunny",
+        "satsuma",
+        "peachy",
+        "everyday loans",
+        "novuna",
+        "creation finance",
+        "mbna",
+        "tesco bank loan",
+        "virgin money loan",
+        "halifax loan",
+            
+        // BNPL / card-linked credit
+        "klarna",
+        "clearpay",
+        "laybuy",
+        "paypal credit",
+        "paypal pay in 3",
+        "monzo flex",
+        "barclaycard",
+        "capital one",
+        "aqua card",
+        "vanquis",
+        "newday",
+        "marbles",
+        "fluid card",
+            
+        // Vehicle & asset finance
+        "black horse",
+        "hitachi capital",
+        "close motor",
+        "alphera",
+        "lex autolease",
+        "arval",
+        "vw finance",
+        "bmw finance",
+        "mercedes finance",
+            
+        // Payday / short-term
+        "quickquid",
+        "wonga",
+        "onga",
+        "cashfloat",
+        "myjar",
+        "safety net credit",
+            
+        // Bank loan descriptors
+        "barclays loan",
+        "hsbc loan",
+        "lloyds loan",
+        "natwest loan",
+        "santander loan",
+        "metro bank loan",
+        "tsb loan",
+      ];
 
       const outflows = accountTransactions
         .filter((t) => t.amount > 0)
@@ -88,12 +200,16 @@ export async function POST(req: Request) {
         }));
 
       const detectedRepayments = outflows.filter((t) => {
-        const nameLower = t.name.toLowerCase();
-        return repaymentKeywords.some((keyword) => nameLower.includes(keyword));
+        const nameLower = t.name.toLowerCase().trim();
+        return repaymentKeywords.some((keyword) =>
+          nameLower.includes(keyword)
+        );
       });
 
-      const totalRepayments = detectedRepayments.reduce((sum, t) => sum + t.amount, 0);
-
+      const totalRepayments = detectedRepayments.reduce(
+        (sum, t) => sum + t.amount,
+        0
+      );
 
       // --- 3. Average End of Day Balance ---
       // Reconstruct daily balances from the current available balance backwards

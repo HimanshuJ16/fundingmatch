@@ -69,13 +69,46 @@ export const BankStatementsStep = () => {
     }
   }, [method, linkToken]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadAnalysis, setUploadAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
-      setFiles((prev) => [...prev, ...newFiles]);
-      // In a real scenario, you might want to validate file types/sizes here
-      // Update form value - simplified as 'any' in schema for now
-      setValue("bankStatements", [...files, ...newFiles]);
+      const updatedFiles = [...files, ...newFiles];
+
+      setFiles(updatedFiles);
+      setValue("bankStatements", updatedFiles);
+
+      // Trigger analysis for all files
+      await analyzeFiles(updatedFiles);
+    }
+  };
+
+  const analyzeFiles = async (filesToAnalyze: File[]) => {
+    setIsAnalyzing(true);
+    try {
+      const formData = new FormData();
+      filesToAnalyze.forEach((file) => {
+        formData.append("file", file);
+      });
+
+      const response = await fetch("/api/analyze-statement", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUploadAnalysis(data.data);
+          console.log("Upload Analysis:", data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing files:", error);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -83,6 +116,12 @@ export const BankStatementsStep = () => {
     const newFiles = files.filter((_, i) => i !== index);
     setFiles(newFiles);
     setValue("bankStatements", newFiles);
+
+    if (newFiles.length > 0) {
+      analyzeFiles(newFiles);
+    } else {
+      setUploadAnalysis(null);
+    }
   };
 
   const onSuccess = React.useCallback(async (public_token: string) => {
@@ -194,6 +233,54 @@ export const BankStatementsStep = () => {
                   </button>
                 </div>
               ))}
+
+              {/* Analysis Status for Uploads */}
+              {isAnalyzing && (
+                <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-[#ffffff99]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  <p className="text-xs text-[#ffffff99]">AI analyzing document...</p>
+                </div>
+              )}
+
+              {uploadAnalysis && (
+                <div className="bg-[#ffffff05] p-3 rounded border border-[#00ff9d33]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-[#00ff9d]"></div>
+                    <p className="text-xs text-[#00ff9d] uppercase tracking-wider font-semibold">AI Analysis Complete</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                    <div>
+                      <p className="text-[#ffffff99]">Est. Monthly Income</p>
+                      <p className="text-white font-mono">
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.average_monthly_income)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[#ffffff99]">Est. EOD Balance</p>
+                      <p className="text-white font-mono">
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.average_eod_balance)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[#ffffff99]">Detected Repayments</p>
+                      <p className="text-white font-mono">
+                        {uploadAnalysis.detected_repayments.count} ({uploadAnalysis.detected_repayments.lenders.join(', ') || 'None'})
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[#ffffff99]">Repayment Value</p>
+                      <p className="text-white font-mono">
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.detected_repayments.total_amount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
         </div>
