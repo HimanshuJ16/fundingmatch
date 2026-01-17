@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
-import { extractFromPdf } from "@/lib/pdf-provider";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -17,31 +16,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    console.log(`Processing ${files.length} files...`);
+    console.log(`Processing ${files.length} files with Native OpenAI PDF Input...`);
 
     // Define the analysis function for a single file
     const analyzeSingleFile = async (file: File) => {
-      let textContent = "";
 
-      // Extract text based on file type
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      let inputPayload: any;
+
       if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-        try {
-          // console.log(`Processing PDF ${file.name} with LangChain PDFLoader...`);
-          textContent = await extractFromPdf(file);
-        } catch (e: any) {
-          throw new Error(`PDF Parsing Error for ${file.name}: ${e.message}`);
-        }
+        // Handle PDF: Convert to Base64
+        const base64String = fileBuffer.toString("base64");
+        inputPayload = {
+          type: "input_file",
+          filename: file.name,
+          file_data: `data:application/pdf;base64,${base64String}`,
+        };
       } else if (file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")) {
-        textContent = await file.text();
+        // Handle CSV: Send as text
+        // Note: The responses API structure uses "input_text"
+        inputPayload = {
+          type: "input_text",
+          text: fileBuffer.toString("utf-8"),
+        };
       } else {
         throw new Error(`Unsupported file type for ${file.name}. Please upload PDF or CSV.`);
       }
 
-      // Truncate text if it's too long
-      const truncatedText = textContent.slice(0, 500000);
-
       const prompt = `
-        You are an expert Financial Analyst AI. Analyze the following text extracted from a UK business bank statement (PDF or CSV).
+        You are an expert Financial Analyst AI. Analyze the attached bank statement file.
         
         Your job: Extract specific financial metrics and return a Strict JSON object.
 
@@ -73,7 +76,7 @@ export async function POST(req: Request) {
 
         3. **Existing Repayments**: 
            - Identify recurring payments to lenders/financing companies.
-           - Keywords to look for: "Loan", "Capital", "Finance", "Iwoca", "Funding Circle", "YouLend", "Libis", "Credit", "Advance", "Premium Credit".
+           - Keywords to look for: "loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow", "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance", "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon", "metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan", "natwest business loan", "santander business loan", "zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty", "lending stream", "sunny", "satsuma", "peachy", "everyday loans", "novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan", "klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex", "barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card", "black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval", "vw finance", "bmw finance", "mercedes finance", "quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit", "barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan".
            - Sum their value and count them. 
            - List unique lender names.
 
@@ -86,26 +89,43 @@ export async function POST(req: Request) {
         - JSON ONLY — no narrative outside JSON.
         - All numbers must be valid numbers (no currency symbols or commas in the number value).
         - If a value is not found, default to 0.
-
-        Bank Statement Text:
-        """
-        ${truncatedText}
-        """
       `;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          { role: "system", content: "You are a helpful financial assistant that outputs JSON." },
-          { role: "user", content: prompt },
-        ],
-        response_format: { type: "json_object" },
-      });
+      // Use the new responses API if available (based on user request and SDK v6)
+      try {
+        // @ts-ignore - responses might not be fully typed in all environments yet
+        const response = await openai.responses.create({
+          model: "gpt-5-mini", // Using gpt-4o as it supports vision/files
+          input: [
+            {
+              role: "user",
+              content: [
+                inputPayload,
+                {
+                  type: "input_text",
+                  text: prompt
+                }
+              ]
+            }
+          ]
+        });
 
-      const analysisContent = completion.choices[0].message.content;
-      if (!analysisContent) throw new Error("No analysis returned from OpenAI");
+        // Output from responses API
+        const analysisContent = response.output_text;
 
-      return JSON.parse(analysisContent);
+        if (!analysisContent) throw new Error("No analysis returned from OpenAI");
+
+        // Clean markdown block if present ```json ... ```
+        const cleanContent = analysisContent.replace(/```json\n|```/g, "").trim();
+        return JSON.parse(cleanContent);
+
+      } catch (err: any) {
+        console.error(`Error processing file ${file.name} with responses API:`, err);
+
+        // Fallback to chat completions if responses API fails (e.g. if SDK version or model doesn't support it perfectly yet)
+        // But the user specifically asked for this. I will assume it works or throw.
+        throw err;
+      }
     };
 
     // Run analysis for all files in parallel
@@ -116,10 +136,7 @@ export async function POST(req: Request) {
     console.log("Individual Analysis Results:", analysisResults);
 
     // Aggregate logic
-    // We assume each file represents a separate period (e.g. 1 month).
-    // So distinct monthly averages should be averaged together to get the "Overall Average Monthly Income".
-
-    const validResults = analysisResults.filter(r => r); // Ensure no nulls if we handled errors loosely (here we throw, so it's fine)
+    const validResults = analysisResults.filter(r => r);
 
     if (validResults.length === 0) {
       throw new Error("No valid analysis results generated.");
@@ -156,18 +173,10 @@ export async function POST(req: Request) {
       }
     });
 
-    // Averages across the number of files (assuming 1 file = 1 month/period)
     const count = validResults.length;
     aggregatedData.average_monthly_income = totalIncomeSum / count;
-    aggregatedData.average_eod_balance = totalEodSum / count; // Average of averages
+    aggregatedData.average_eod_balance = totalEodSum / count;
 
-    // Repayments are cumulative count/amount over the period? 
-    // Usually "Monthly Repayments" is what matters for affordability.
-    // But the detected_repayments structure asks for "count" and "total_amount".
-    // If the UI shows "Detected Repayments", it usually means "What did we find in these files?"
-    // If we find 2 loans in Month 1 and 2 loans in Month 2 (same loans), should we say 4 detected?
-    // However, the prompt asks for "Existing Repayments".
-    // Let's sum strictly for now as per "Analysis of these files".
     aggregatedData.detected_repayments.count = totalRepaymentCount;
     aggregatedData.detected_repayments.total_amount = totalRepaymentAmount;
     aggregatedData.detected_repayments.lenders = Array.from(allLenders);

@@ -12,8 +12,6 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@ideal-postcodes/address-finder": "^5.2.6",
-    "@langchain/community": "^1.1.4",
-    "@langchain/core": "^1.1.15",
     "@prisma/client": "^6.19.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
