@@ -9,6 +9,42 @@ export const BankStatementsStep = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+
+  const fetchAccounts = async (connectionId: string) => {
+    try {
+      const response = await fetch("/api/plaid/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAccounts(data.accounts || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch accounts", error);
+    }
+  };
+
+  const fetchAnalysis = async (connectionId: string) => {
+    try {
+      const response = await fetch("/api/plaid/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAnalysisData(data.data);
+        // Here you would pass 'data.data' to your rules engine
+        console.log("Financial Analysis Data:", data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch analysis", error);
+    }
+  };
 
   // Sync method with form state
   useEffect(() => {
@@ -64,6 +100,10 @@ export const BankStatementsStep = () => {
         setIsLinked(true);
         setValue("openBankingLinked", true);
         setValue("plaidConnectionId", data.connection_id);
+
+        // Fetch account details immediately
+        fetchAccounts(data.connection_id);
+        fetchAnalysis(data.connection_id);
       }
     } catch (error) {
       console.error("Error exchanging public token:", error);
@@ -209,7 +249,45 @@ export const BankStatementsStep = () => {
               </div>
               <div className="text-center">
                 <h3 className="text-white font-['Roobert-SemiBold',Helvetica] text-lg">Account Connected</h3>
-                <p className="text-[#ffffffcc] text-sm font-['Roobert-Regular',Helvetica]">Your business bank account has been successfully linked.</p>
+                <p className="text-[#ffffffcc] text-sm font-['Roobert-Regular',Helvetica] mb-4">Your business bank account has been successfully linked.</p>
+
+                {/* Account Details Display */}
+                {accounts.length > 0 && (
+                  <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] mb-2">
+                    <p className="text-xs text-[#ffffff99] uppercase tracking-wider mb-2">Connected Accounts</p>
+                    <div className="flex flex-col gap-2">
+                      {accounts.map((acc: any) => (
+                        <div key={acc.account_id} className="flex justify-between items-center text-sm">
+                          <span className="text-white font-medium">{acc.name}</span>
+                          <span className="text-[#ffffff99]">
+                            {acc.mask ? `****${acc.mask}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Analysis Status */}
+                {analysisData ? (
+                  <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] mb-2">
+                    <p className="text-xs text-[#00ff9d] uppercase tracking-wider mb-1">AI Analysis Ready</p>
+                    <p className="text-xs text-[#ffffff99]">
+                      Processed {analysisData.reduce((acc: number, curr: any) => acc + curr.analysis.transaction_count, 0)} transactions across {analysisData.length} accounts.
+                    </p>
+                  </div>
+                ) : (
+                  isLinked && (
+                    <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] mb-2 flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-[#ffffff99]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                      </svg>
+                      <p className="text-xs text-[#ffffff99]">Analyzing financial history...</p>
+                    </div>
+                  )
+                )}
+
               </div>
               <button
                 type="button"
