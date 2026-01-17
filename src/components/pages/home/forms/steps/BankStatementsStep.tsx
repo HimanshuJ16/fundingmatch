@@ -270,10 +270,47 @@ export const BankStatementsStep = () => {
 
                 {/* Analysis Status */}
                 {analysisData ? (
-                  <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] mb-2">
-                    <p className="text-xs text-[#00ff9d] uppercase tracking-wider mb-1">AI Analysis Ready</p>
-                    <p className="text-xs text-[#ffffff99]">
-                      Processed {analysisData.reduce((acc: number, curr: any) => acc + curr.analysis.transaction_count, 0)} transactions across {analysisData.length} accounts.
+                  <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] mb-2 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-[#00ff9d]"></div>
+                      <p className="text-xs text-[#00ff9d] uppercase tracking-wider font-semibold">AI Analysis Complete</p>
+                    </div>
+
+                    {analysisData.map((accAnalysis: any, idx: number) => (
+                      <div key={idx} className="bg-[#ffffff05] p-3 rounded border border-[#ffffff0a]">
+                        <p className="text-sm font-semibold text-white mb-2">{accAnalysis.name} ({accAnalysis.mask ? `****${accAnalysis.mask}` : 'N/A'})</p>
+
+                        <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                          <div>
+                            <p className="text-[#ffffff99]">Avg. Monthly Income</p>
+                            <p className="text-white font-mono">
+                              {new Intl.NumberFormat('en-GB', { style: 'currency', currency: accAnalysis.balances.iso_currency_code || 'GBP' }).format(accAnalysis.analysis.average_monthly_income)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#ffffff99]">Avg. EOD Balance</p>
+                            <p className="text-white font-mono">
+                              {new Intl.NumberFormat('en-GB', { style: 'currency', currency: accAnalysis.balances.iso_currency_code || 'GBP' }).format(accAnalysis.analysis.average_eod_balance)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#ffffff99]">Active Repayments</p>
+                            <p className="text-white font-mono">
+                              {accAnalysis.analysis.detected_repayments.count} detected
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#ffffff99]">Total Repayment Value</p>
+                            <p className="text-white font-mono">
+                              {new Intl.NumberFormat('en-GB', { style: 'currency', currency: accAnalysis.balances.iso_currency_code || 'GBP' }).format(accAnalysis.analysis.detected_repayments.total_amount)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <p className="text-[10px] text-[#ffffff66] italic">
+                      Based on last 6 months of transaction history.
                     </p>
                   </div>
                 ) : (
@@ -283,7 +320,7 @@ export const BankStatementsStep = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                       </svg>
-                      <p className="text-xs text-[#ffffff99]">Analyzing financial history...</p>
+                      <p className="text-xs text-[#ffffff99]">Analyzing income, repayments, and balances...</p>
                     </div>
                   )
                 )}
