@@ -44,58 +44,116 @@ export async function POST(req: Request) {
       }
 
       const prompt = `
-        You are an expert Financial Analyst AI. Analyze the attached bank statement file.
-        
-        Your job: Extract specific financial metrics and return a Strict JSON object.
+      You are a professional Financial Analysis Engine.
 
-        STRICT JSON OUTPUT ONLY:
-        {
-          "_thought_process": "Brief reasoning for calculations",
-          "average_monthly_income": number,
-          "average_eod_balance": number,
-          "detected_repayments": {
-            "count": number,
-            "total_amount": number,
-            "lenders": string[]
-          },
-          "currency_code": string
-        }
+You will be given a bank statement (PDF or CSV).
+Your task is to parse it and return a SINGLE, VALID JSON OBJECT that follows the schema exactly.
 
-        ════════════════════════════
-        METRICS TO EXTRACT
-        ════════════════════════════
-        1. **Average Monthly Income**: 
-           - Sum of all inflows (credits). 
-           - Divide by the number of months represented in the statement (usually 1 if it's a monthly statement).
-           - Exclude obvious internal transfers or refunds if clearly identifiable.
+━━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (JSON ONLY)
+━━━━━━━━━━━━━━━━━━━━
+{
+  "_thought_process": "Very brief explanation of how values were derived",
+  "average_monthly_income": number,
+  "average_eod_balance": number,
+  "detected_repayments": {
+    "count": number,
+    "total_amount": number,
+    "lenders": string[]
+  },
+  "currency_code": string
+}
 
-        2. **Average End of Day Balance**: 
-           - Estimate the typical daily balance.
-           - If a running balance column exists, use that.
-           - Otherwise, average the starting and ending balances of the period.
+⚠️ Rules:
+- Output MUST be valid JSON. No markdown. No commentary outside JSON.
+- All numbers must be plain numbers (no symbols, commas, or text).
+- If any value cannot be determined, return 0.
+- Do NOT guess values. Only derive from the file.
+- Do NOT invent lenders.
+- Use decimals where appropriate.
+- Use lowercase ISO currency codes (e.g., "GBP", "USD", "EUR").
 
-        3. **Existing Repayments**: 
-           - Identify recurring payments to lenders/financing companies.
-           - Keywords to look for: "loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow", "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance", "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon", "metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan", "natwest business loan", "santander business loan", "zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty", "lending stream", "sunny", "satsuma", "peachy", "everyday loans", "novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan", "klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex", "barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card", "black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval", "vw finance", "bmw finance", "mercedes finance", "quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit", "barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan".
-           - Sum their value and count them. 
-           - List unique lender names.
+━━━━━━━━━━━━━━━━━━━━
+HOW TO CALCULATE
+━━━━━━━━━━━━━━━━━━━━
 
-        4. **Currency**: 
-           - Detect the currency code (e.g., GBP, USD, EUR). Default to "GBP".
+1. Average Monthly Income:
+- Identify all CREDIT / INFLOW transactions.
+- Exclude:
+  - Internal transfers between own accounts
+  - Refund reversals
+  - Obvious self-movements (same-name transfers)
+- Group by calendar month found in the data.
+- For each month:
+  - Sum all qualifying inflows.
+- Return:
+  - (Sum of all monthly totals) ÷ (Number of distinct months)
 
-        ════════════════════════════
-        STRICT REQUIREMENTS
-        ════════════════════════════
-        - JSON ONLY — no narrative outside JSON.
-        - All numbers must be valid numbers (no currency symbols or commas in the number value).
-        - If a value is not found, default to 0.
+If the file only covers one month, return that month’s total.
+
+2. Average End-of-Day Balance:
+- If a running balance column exists:
+  - Use all daily ending balances.
+  - **CRITICAL:** Check for suffixes like "D", "Dr", "Debit", "OD", or enclosing parentheses (e.g., "4,500 D" or "(4,500)").
+  - Treat these values as NEGATIVE (Overdraft).
+  - Return the arithmetic mean.
+- If not:
+  - Use: (Opening Balance + Closing Balance) ÷ 2
+
+3. Existing Repayments:
+- Scan all DEBIT transactions.
+- A repayment is any payment that:
+  - Appears recurring OR
+  - Matches lender-related keywords OR
+  - Is clearly a loan/finance/credit obligation
+
+Match against these lender keywords:
+"loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow",
+"iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify",
+"worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance",
+"lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon",
+"metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan",
+"natwest business loan", "santander business loan",
+"zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty",
+"lending stream", "sunny", "satsuma", "peachy", "everyday loans",
+"novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan",
+"klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex",
+"barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card",
+"black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval",
+"vw finance", "bmw finance", "mercedes finance",
+"quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit",
+"barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan"
+
+For detected repayments:
+- Count each transaction that qualifies
+- Sum their absolute debit values
+- Extract unique lender names (cleaned, human-readable)
+
+4. Currency:
+- Detect from:
+  - Symbols
+  - Headers
+  - Statement metadata
+- If unclear, default to "GBP"
+
+━━━━━━━━━━━━━━━━━━━━
+FINAL CHECK
+━━━━━━━━━━━━━━━━━━━━
+Before responding:
+- Validate JSON structure
+- Ensure no fields are missing
+- Ensure all numbers are valid
+- Ensure lenders are unique
+- Ensure no hallucinated data
+
+Return ONLY the JSON object.
       `;
 
       // Use the new responses API if available (based on user request and SDK v6)
       try {
         // @ts-ignore - responses might not be fully typed in all environments yet
         const response = await openai.responses.create({
-          model: "gpt-5-mini", // Using gpt-4o as it supports vision/files
+          model: "gpt-5.1",
           input: [
             {
               role: "user",
