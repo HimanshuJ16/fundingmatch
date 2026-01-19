@@ -64,7 +64,7 @@ export const HeroSection = () => {
             </p>
           </div>
 
-          <ol className="flex flex-col w-full max-w-[589px] items-start gap-4 lg:gap-[17px] relative">
+          <ol className="flex-col hidden lg:flex w-full max-w-[589px] items-start gap-4 lg:gap-[17px] relative">
             {steps.map((step) => (
               <li
                 key={step.number}
