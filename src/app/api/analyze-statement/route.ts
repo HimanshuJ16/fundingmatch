@@ -61,6 +61,10 @@ OUTPUT FORMAT (JSON ONLY)
     "total_amount": number,
     "lenders": string[]
   },
+  "low_balance_days_count": number, // Count of days where EOD balance < 300
+  "negative_balance_days_count": number, // Count of days where EOD balance < 0
+  "average_monthly_card_turnover": number, // Revenue specifically from card processors
+  "detected_card_providers": string[], // List of detected card processor names
   "currency_code": string
 }
 
@@ -91,14 +95,17 @@ HOW TO CALCULATE
 
 If the file only covers one month, return that month’s total.
 
-2. Average End-of-Day Balance:
+2. Average End-of-Day Balance & Low Balance Checks:
 - If a running balance column exists:
   - Use all daily ending balances.
   - **CRITICAL:** Check for suffixes like "D", "Dr", "Debit", "OD", or enclosing parentheses (e.g., "4,500 D" or "(4,500)").
   - Treat these values as NEGATIVE (Overdraft).
-  - Return the arithmetic mean.
+  - Return the arithmetic mean for "average_eod_balance".
+  - Count how many days the balance was below 300 for "low_balance_days_count".
+  - Count how many days the balance was below 0 for "negative_balance_days_count".
 - If not:
   - Use: (Opening Balance + Closing Balance) ÷ 2
+  - Return 0 for counts as they cannot be accurately determined.
 
 3. Existing Repayments:
 - Scan all DEBIT transactions.
@@ -129,12 +136,32 @@ For detected repayments:
 - Sum their absolute debit values
 - Extract unique lender names (cleaned, human-readable)
 
-4. Currency:
-- Detect from:
-  - Symbols
-  - Headers
-  - Statement metadata
-- If unclear, default to "GBP"
+4. Card Turnover & Providers:
+- Scan CREDIT / INFLOW transactions.
+- Look for recurring settlement credits from these providers:
+  - Worldpay (WORLD PAY, WORLDPAY, WPY, VANTIV)
+  - Barclaycard (BARCLAYCARD, BCL CARD SERV)
+  - Elavon (ELAVON, ELAVON FIN SERV)
+  - Global Payments (GLOBAL PAYMENTS, GPUK)
+  - FIS / First Data (FIRST DATA, FDMS)
+  - Dojo (DOJO)
+  - Teya (TEYA, TEYA PAYMENTS, TEYA SETTLEMENT)
+  - SumUp (SUMUP)
+  - Square (SQUARE, SQUAREUP)
+  - Zettle (IZETTLE)
+  - Viva Wallet (VIVA WALLET)
+  - Lloyds Cardnet (LLOYDS CARDNET, CARDNET)
+  - Bank of Scotland Cardnet (BOS CARDNET)
+  - AIB Merchant Services (AIB MS)
+  - Paymentsense, Handepay, Takepayments, EVO Payments, TSYS
+  - Stripe, PayPal, Adyen, Checkout.com
+- Sum the total value of these specific transactions.
+- Calculate average monthly total (Total Sum ÷ Months).
+- List the unique provider names found.
+
+5. Currency:
+- Detect from symbols, headers, or metadata.
+- If unclear, default to "GBP".
 
 ━━━━━━━━━━━━━━━━━━━━
 FINAL CHECK
@@ -209,6 +236,10 @@ Return ONLY the JSON object.
         total_amount: 0,
         lenders: [] as string[]
       },
+      low_balance_days_count: 0,
+      negative_balance_days_count: 0,
+      average_monthly_card_turnover: 0,
+      detected_card_providers: [] as string[],
       currency_code: validResults[0].currency_code || "GBP"
     };
 
@@ -216,11 +247,18 @@ Return ONLY the JSON object.
     let totalEodSum = 0;
     let totalRepaymentCount = 0;
     let totalRepaymentAmount = 0;
+    let totalLowBalanceDays = 0;
+    let totalNegativeBalanceDays = 0;
+    let totalCardTurnoverSum = 0;
     const allLenders = new Set<string>();
+    const allCardProviders = new Set<string>();
 
     validResults.forEach((res) => {
       totalIncomeSum += (res.average_monthly_income || 0);
       totalEodSum += (res.average_eod_balance || 0);
+      totalLowBalanceDays += (res.low_balance_days_count || 0);
+      totalNegativeBalanceDays += (res.negative_balance_days_count || 0);
+      totalCardTurnoverSum += (res.average_monthly_card_turnover || 0);
 
       const repayments = res.detected_repayments || { count: 0, total_amount: 0, lenders: [] };
       totalRepaymentCount += (repayments.count || 0);
@@ -229,15 +267,24 @@ Return ONLY the JSON object.
       if (Array.isArray(repayments.lenders)) {
         repayments.lenders.forEach((l: string) => allLenders.add(l));
       }
+
+      if (Array.isArray(res.detected_card_providers)) {
+        res.detected_card_providers.forEach((p: string) => allCardProviders.add(p));
+      }
     });
 
     const count = validResults.length;
     aggregatedData.average_monthly_income = totalIncomeSum / count;
     aggregatedData.average_eod_balance = totalEodSum / count;
+    aggregatedData.average_monthly_card_turnover = totalCardTurnoverSum / count;
 
     aggregatedData.detected_repayments.count = totalRepaymentCount;
     aggregatedData.detected_repayments.total_amount = totalRepaymentAmount;
     aggregatedData.detected_repayments.lenders = Array.from(allLenders);
+
+    aggregatedData.low_balance_days_count = totalLowBalanceDays;
+    aggregatedData.negative_balance_days_count = totalNegativeBalanceDays;
+    aggregatedData.detected_card_providers = Array.from(allCardProviders);
 
     console.log("Aggregated Analysis:", aggregatedData);
 
