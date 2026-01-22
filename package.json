@@ -14,6 +14,7 @@
     "@ideal-postcodes/address-finder": "^5.2.6",
     "@prisma/client": "^6.19.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "openai": "^6.16.0",
