@@ -54,6 +54,10 @@ export const quickMatchSchema = z.object({
   bankStatements: z.any().optional(), // For manual uploads
   openBankingLinked: z.boolean().optional(), // For checking if link was successful
   plaidConnectionId: z.string().optional(), // ID from `PlaidConnection` table
+
+  // Hidden/System Fields populated by steps
+  experianData: z.any().optional(),
+  bankAnalysis: z.any().optional(),
 }).superRefine((data, ctx) => {
   if (data.fundingAmount === "Custom" && (!data.fundingAmountCustom || data.fundingAmountCustom.trim() === "")) {
     ctx.addIssue({
