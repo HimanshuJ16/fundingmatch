@@ -75,119 +75,38 @@ export async function POST(req: Request) {
 
 
       // --- 2. Lender Repayment Detection ---
-      const repaymentKeywords = [
-        // Generic finance terms (high recall)
-        "loan",
-        "repayment",
-        "instalment",
-        "installment",
-        "instlmnt",
-        "emi",
-        "credit",
-        "finance",
-        "financing",
-        "lending",
-        "capital",
-        "advance",
-        "agreement",
-        "settlement",
-        "debt",
-        "borrow",
-            
+      // --- 2. Lender Repayment Detection ---
+      const genericRepaymentTerms = [
+        "loan", "repayment", "instalment", "installment", "instlmnt", "emi",
+        "credit", "finance", "financing", "lending", "capital", "advance",
+        "agreement", "settlement", "debt", "borrow"
+      ];
+
+      const knownLenders = [
         // UK business lenders / MCA
-        "iwoca",
-        "funding circle",
-        "youlend",
-        "libis",
-        "fleximize",
-        "esme loans",
-        "marketfinance",
-        "thincats",
-        "capify",
-        "worldpay advance",
-        "tide cashflow",
-        "nucleus commercial finance",
-        "boost capital",
-        "just cashflow",
-        "365 finance",
-        "lombard",
-        "bibby",
-        "white oak",
-        "ultimate finance",
-        "shawbrook",
-        "allica",
-        "close brothers",
-        "paragon",
-        "metro bank business loan",
-        "hsbc business loan",
-        "barclays business loan",
-        "lloyds business loan",
-        "natwest business loan",
+        "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans",
+        "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow",
+        "nucleus commercial finance", "boost capital", "just cashflow", "365 finance",
+        "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica",
+        "close brothers", "paragon", "metro bank business loan", "hsbc business loan",
+        "barclays business loan", "lloyds business loan", "natwest business loan",
         "santander business loan",
-            
-        // Personal lenders
-        "zopa",
-        "ratesetter",
-        "rate setter",
-        "amigo",
-        "koyo",
-        "118 118 money",
-        "oakbrook",
-        "drafty",
-        "lending stream",
-        "sunny",
-        "satsuma",
-        "peachy",
-        "everyday loans",
-        "novuna",
-        "creation finance",
-        "mbna",
-        "tesco bank loan",
-        "virgin money loan",
-        "halifax loan",
-            
-        // BNPL / card-linked credit
-        "klarna",
-        "clearpay",
-        "laybuy",
-        "paypal credit",
-        "paypal pay in 3",
-        "monzo flex",
-        "barclaycard",
-        "capital one",
-        "aqua card",
-        "vanquis",
-        "newday",
-        "marbles",
-        "fluid card",
-            
-        // Vehicle & asset finance
-        "black horse",
-        "hitachi capital",
-        "close motor",
-        "alphera",
-        "lex autolease",
-        "arval",
-        "vw finance",
-        "bmw finance",
-        "mercedes finance",
-            
-        // Payday / short-term
-        "quickquid",
-        "wonga",
-        "onga",
-        "cashfloat",
-        "myjar",
-        "safety net credit",
-            
-        // Bank loan descriptors
-        "barclays loan",
-        "hsbc loan",
-        "lloyds loan",
-        "natwest loan",
-        "santander loan",
-        "metro bank loan",
-        "tsb loan",
+
+        // Personal lenders / High Street
+        "zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money",
+        "oakbrook", "drafty", "lending stream", "sunny", "satsuma", "peachy",
+        "everyday loans", "novuna", "creation finance", "mbna",
+        "tesco bank loan", "virgin money loan", "halifax loan", "bank of scotland loan",
+
+        // BNPL / short-term
+        "klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3",
+        "monzo flex", "barclaycard", "capital one", "aqua card", "vanquis",
+        "newday", "marbles", "fluid card", "quickquid", "wonga", "cashfloat",
+        "myjar", "safety net credit",
+
+        // Asset/Auto
+        "black horse", "hitachi capital", "close motor", "alphera",
+        "lex autolease", "arval", "vw finance", "bmw finance", "mercedes finance"
       ];
 
       const outflows = accountTransactions
@@ -201,9 +120,10 @@ export async function POST(req: Request) {
 
       const detectedRepayments = outflows.filter((t) => {
         const nameLower = t.name.toLowerCase().trim();
-        return repaymentKeywords.some((keyword) =>
-          nameLower.includes(keyword)
-        );
+        // Match specific OR generic to count the volume/transactions
+        const isSpecific = knownLenders.some(k => nameLower.includes(k));
+        const isGeneric = genericRepaymentTerms.some(k => nameLower.includes(k));
+        return isSpecific || isGeneric;
       });
 
       const totalRepayments = detectedRepayments.reduce(
@@ -213,41 +133,14 @@ export async function POST(req: Request) {
 
       // --- 3. Average End of Day Balance ---
       // Reconstruct daily balances from the current available balance backwards
-      // This is an estimation. Plaid does provide historical balances via `/accounts/balance/get` but it's checking usage. 
-      // Reconstructing from transactions is a standard lightweight approach for estimation.
 
       let runningBalance = account.balances.current || 0;
       const dailyBalances: number[] = [];
 
-      // Sort transactions by date descending (newest first) - typically Plaid returns them this way but ensure it.
+      // Sort transactions by date descending (newest first)
       const sortedTransactions = [...accountTransactions].sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
-
-      // We need to group transactions by day to adjust the running balance correctly EOD
-      // But for a simple average over the period, we can just iterate.
-      // To be more precise for "EOD", we should adjust rule: 
-      // Balance_Prev_Day = Balance_Today - (Today_Inflows - Today_Outflows) 
-      // = Balance_Today - (Today_Net_Change)
-      // Since Plaid amounts: + is outflow, - is inflow.
-      // Net_Change in Plaid terms = Sum(Amounts)
-      // Balance_Prev = Balance_Curr - Sum(Amounts_Day) ?? No.
-      // Balance_Before_Transaction = Balance_After + Transaction_Amount (Plaid Amount)
-      // Ex: Balance 100. Spent 10 (Plaid +10). Balance was 110. 100 + 10 = 110. Correct.
-      // Ex: Balance 100. Received 50 (Plaid -50). Balance was 50. 100 + (-50) = 50. Correct.
-
-      // So to go backwards: Balance_Prev = Balance_Curr + Transaction_Amount
-
-      const uniqueDays = Array.from(new Set(sortedTransactions.map(t => t.date))).sort().reverse();
-
-      // We will map "Day" -> "EOD Balance"
-      // Start with current balance as "today's" EOD (approximation) or the latest known.
-
-      // Actually, let's just do a simple average of the reconstructed balances for every transaction point? 
-      // No, "Usual End of Day" implies a time-weighted average or just average of daily closing balances.
-
-      // Let's compute approx daily balances for the covered range.
-      let currentReconstructedBalance = runningBalance;
 
       // Map of Date -> Transactions[]
       const txnsByDate: { [date: string]: typeof sortedTransactions } = {};
@@ -259,15 +152,12 @@ export async function POST(req: Request) {
       // If we looked back 180 days
       const daysToAnalyze = 180;
       const balancesList: number[] = [];
+      let currentReconstructedBalance = runningBalance;
 
       for (let i = 0; i < daysToAnalyze; i++) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-
-        // The balance at the END of 'dateStr'.
-        // If i=0 (today), it's current balance.
-        // If i=1 (yesterday), it's Current + Sum(Today's Txns).
 
         balancesList.push(currentReconstructedBalance);
 
@@ -283,6 +173,43 @@ export async function POST(req: Request) {
         ? balancesList.reduce((a, b) => a + b, 0) / balancesList.length
         : 0;
 
+      // --- 4. Card Turnover & Providers ---
+      const cardProviderKeywords = [
+        "world pay", "worldpay", "wpy", "vantiv",
+        "barclaycard", "bcl card serv",
+        "elavon", "elavon fin serv",
+        "global payments", "gpuk",
+        "first data", "fdms", "fis",
+        "dojo",
+        "teya", "teya payments", "teya settlement",
+        "sumup",
+        "square", "squareup",
+        "izettle", "zettle",
+        "viva wallet",
+        "lloyds cardnet", "cardnet",
+        "bos cardnet",
+        "aib ms", "aib merchant services",
+        "paymentsense", "handepay", "takepayments", "evo payments", "tsys",
+        "stripe", "paypal", "adyen", "checkout.com"
+      ];
+
+      const cardTransactions = inflows.filter(t => {
+        const nameLower = t.name.toLowerCase();
+        return cardProviderKeywords.some(k => nameLower.includes(k));
+      });
+
+      const totalCardTurnover = cardTransactions.reduce((sum, t) => sum + t.amount, 0);
+      const averageMonthlyCardTurnover = incomeMonths > 0 ? totalCardTurnover / incomeMonths : 0;
+
+      const detectedCardProviders = Array.from(new Set(cardTransactions.map(t => {
+        const nameLower = t.name.toLowerCase();
+        const matchedKeyword = cardProviderKeywords.find(k => nameLower.includes(k));
+        return matchedKeyword ? matchedKeyword.toUpperCase() : t.name;
+      })));
+
+      // --- 5. Balance Checks ---
+      const lowBalanceDays = balancesList.filter(b => b < 300).length;
+      const negativeBalanceDays = balancesList.filter(b => b < 0).length;
 
       return {
         account_id: account.account_id,
@@ -302,18 +229,114 @@ export async function POST(req: Request) {
           detected_repayments: {
             count: detectedRepayments.length,
             total_amount: totalRepayments,
+            lenders: Array.from(new Set(detectedRepayments.map(t => {
+              const nameLower = t.name.toLowerCase();
+              // Prioritize Specific Lender Name
+              const matchedLender = knownLenders.find(k => nameLower.includes(k));
+              if (matchedLender) {
+                return matchedLender.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+              }
+              // If only matches generic, DO NOT add "Loan" to the lender LIST.
+              return null;
+            }).filter(Boolean) as string[])),
             transactions: detectedRepayments
           },
+          detected_card_providers: detectedCardProviders,
+          average_monthly_card_turnover: averageMonthlyCardTurnover,
           average_eod_balance: averageEODBalance,
+          low_balance_days_count: lowBalanceDays,
+          negative_balance_days_count: negativeBalanceDays,
           inflows,
           outflows,
         },
       };
     });
 
+    // --- 6. Aggregation for Match Engine ---
+    const aggregatedData = {
+      _thought_process: "Aggregated from Plaid accounts",
+      average_monthly_income: 0,
+      average_eod_balance: 0,
+      detected_repayments: {
+        count: 0,
+        total_amount: 0,
+        lenders: [] as string[]
+      },
+      low_balance_days_count: 0,
+      negative_balance_days_count: 0,
+      average_monthly_card_turnover: 0,
+      detected_card_providers: [] as string[],
+      currency_code: accountAnalysis[0]?.balances?.iso_currency_code || "GBP"
+    };
+
+    let totalIncomeSum = 0;
+    let totalEodSum = 0;
+    let totalRepaymentCount = 0;
+    let totalRepaymentAmount = 0;
+    let totalLowBalanceDays = 0;
+    let totalNegativeBalanceDays = 0;
+    let totalCardTurnoverSum = 0;
+    const allLenders = new Set<string>();
+    const allCardProviders = new Set<string>();
+
+    accountAnalysis.forEach((res) => {
+      totalIncomeSum += (res.analysis.average_monthly_income || 0);
+      totalEodSum += (res.analysis.average_eod_balance || 0);
+      totalLowBalanceDays += (res.analysis.low_balance_days_count || 0);
+      totalNegativeBalanceDays += (res.analysis.negative_balance_days_count || 0);
+      totalCardTurnoverSum += (res.analysis.average_monthly_card_turnover || 0);
+
+      const repayments = res.analysis.detected_repayments;
+      totalRepaymentCount += (repayments.count || 0);
+      totalRepaymentAmount += (repayments.total_amount || 0);
+
+      if (Array.isArray(repayments.lenders)) {
+        repayments.lenders.forEach((l: string) => allLenders.add(l));
+      }
+
+      if (Array.isArray(res.analysis.detected_card_providers)) {
+        res.analysis.detected_card_providers.forEach((p: string) => allCardProviders.add(p));
+      }
+    });
+
+    const count = accountAnalysis.length || 1;
+
+    // Averages/Sums
+    aggregatedData.average_monthly_income = totalIncomeSum; // Sum of incomes across accounts is usually correct for total business income? Or average? 
+    // Let's stick to SUM for income (if multiple accounts)
+    // Actually, analyze-statement logic aggregated by averaging file results. 
+    // If files are "Month 1, Month 2" -> Average makes sense.
+    // If files are "Account A, Account B" -> Sum makes sense.
+    // Plaid returns Accounts. So SUM is likely better for Income.
+    // But let's look at `average_eod_balance`. Sum of balances = Total Liquidity.
+    // Let's use SUM for Income, and SUM for EOD Balance (Total Cash)? 
+    // Wait, match-lenders expects "Average Monthly Turnover". That is definitely SUM of all accounts' turnover.
+    // "Average EOD Balance" -> Total Cash Position -> Sum of all accounts.
+
+    // Correction: analyze-statement averaged them. 
+    // "totalIncomeSum / count".
+    // I will stick to what analyze-statement did to ensure consistency with existing rules.
+    // (Even if Sum might be more logical for multi-account, the rules might be calibrated for 'per account' or 'average view').
+    // Actually, let's use Sum for Income/Turnover, Average for Balance?
+    // No, analyze-statement used: aggregatedData.average_monthly_income = totalIncomeSum / count;
+    // I will replicate that EXACTLY to avoid breaking rules.
+
+    aggregatedData.average_monthly_income = totalIncomeSum / count;
+    aggregatedData.average_eod_balance = totalEodSum / count;
+    aggregatedData.average_monthly_card_turnover = totalCardTurnoverSum / count;
+
+    aggregatedData.detected_repayments.count = totalRepaymentCount;
+    aggregatedData.detected_repayments.total_amount = totalRepaymentAmount;
+    aggregatedData.detected_repayments.lenders = Array.from(allLenders);
+
+    aggregatedData.low_balance_days_count = totalLowBalanceDays;
+    aggregatedData.negative_balance_days_count = totalNegativeBalanceDays;
+    aggregatedData.detected_card_providers = Array.from(allCardProviders);
+
     return NextResponse.json({
       success: true,
-      data: accountAnalysis,
+      data: aggregatedData, // For the Form/Engine (Object)
+      accounts: accountAnalysis // For the UI (Array)
     });
   } catch (error) {
     console.error("Error fetching Plaid transactions:", error);

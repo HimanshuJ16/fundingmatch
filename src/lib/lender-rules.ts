@@ -17,7 +17,7 @@ export interface ApplicationData {
   };
   credit: {
     experianScore: number;
-    experianBand?: number; // Optional, derive from score if needed
+    experianBand?: number | string; // Band can be "Maximum Risk" (string) or Index (number)
     experianDelphiScore?: number; // Commercial score
   };
   financials: {
@@ -149,10 +149,22 @@ export function matchLenders(data: ApplicationData): Lender[] {
     }
 
     // Experian Band >= 3 (Approximation: Score > 60?)
-    // Let's assume input has band or we map score. 
     // If no band provided, use score: 0-100 range? 
     // Standard Commercial Delphi: Band 3 is usually > 45-50. Let's strict it to 60 for safety if not band.
-    const band = data.credit.experianBand || (data.credit.experianScore > 60 ? 3 : 1);
+    let bandVal = 0;
+    if (typeof data.credit.experianBand === 'number') {
+      bandVal = data.credit.experianBand;
+    } else if (typeof data.credit.experianBand === 'string') {
+      // Simple mapping or fallback
+      if (data.credit.experianBand.includes("Minimal") || data.credit.experianBand.includes("Low")) bandVal = 5;
+      else if (data.credit.experianBand.includes("Average")) bandVal = 3;
+      else bandVal = 1;
+    }
+
+    // Fallback to score if band low
+    if (bandVal === 0 && data.credit.experianScore > 60) bandVal = 3;
+
+    const band = bandVal || (data.credit.experianScore > 60 ? 3 : 1);
     if (band >= 3) {
       reasons.push(`Experian Band ${band} >= 3`);
     } else {

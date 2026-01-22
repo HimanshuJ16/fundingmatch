@@ -250,8 +250,8 @@ Return ONLY the JSON object.
     let totalLowBalanceDays = 0;
     let totalNegativeBalanceDays = 0;
     let totalCardTurnoverSum = 0;
-    const allLenders = new Set<string>();
-    const allCardProviders = new Set<string>();
+    const allLenders = new Map<string, string>(); // normalized -> display
+    const allCardProviders = new Map<string, string>(); // normalized -> display
 
     validResults.forEach((res) => {
       totalIncomeSum += (res.average_monthly_income || 0);
@@ -265,11 +265,21 @@ Return ONLY the JSON object.
       totalRepaymentAmount += (repayments.total_amount || 0);
 
       if (Array.isArray(repayments.lenders)) {
-        repayments.lenders.forEach((l: string) => allLenders.add(l));
+        repayments.lenders.forEach((l: string) => {
+          const normalized = l.trim().toLowerCase();
+          if (!allLenders.has(normalized)) {
+            allLenders.set(normalized, l.trim());
+          }
+        });
       }
 
       if (Array.isArray(res.detected_card_providers)) {
-        res.detected_card_providers.forEach((p: string) => allCardProviders.add(p));
+        res.detected_card_providers.forEach((p: string) => {
+          const normalized = p.trim().toLowerCase();
+          if (!allCardProviders.has(normalized)) {
+            allCardProviders.set(normalized, p.trim());
+          }
+        });
       }
     });
 
@@ -280,11 +290,11 @@ Return ONLY the JSON object.
 
     aggregatedData.detected_repayments.count = totalRepaymentCount;
     aggregatedData.detected_repayments.total_amount = totalRepaymentAmount;
-    aggregatedData.detected_repayments.lenders = Array.from(allLenders);
+    aggregatedData.detected_repayments.lenders = Array.from(allLenders.values());
 
     aggregatedData.low_balance_days_count = totalLowBalanceDays;
     aggregatedData.negative_balance_days_count = totalNegativeBalanceDays;
-    aggregatedData.detected_card_providers = Array.from(allCardProviders);
+    aggregatedData.detected_card_providers = Array.from(allCardProviders.values());
 
     console.log("Aggregated Analysis:", aggregatedData);
 

@@ -91,41 +91,44 @@ export const QuickMatchFormSection = () => {
       }
 
       if (isValid) {
-        console.log("Form Completed", methods.getValues());
-
-        // In a real app, you might want to wait for upload here or just pass files to next step (confirmation) 
-        // which might submit everything.
-        // Current logic had submission in Step 7 block previously.
-        // Moving submission logic... actually Step 8 is confirmation/success.
-        // So we should 'Submit' here on transition 7->8.
+        // Retrieve all data from form state
+        const allData = methods.getValues() as any;
+        console.log("Form Completed. Submitting Data:", allData);
 
         try {
-          const formData = new FormData();
-          const values = methods.getValues();
+          // Construct Payload for Matching Engine
+          const payload = {
+            formData: {
+              businessType: allData.businessType,
+              timeTrading: allData.timeTrading || "12 months", // Fallback if missing
+              companyRegistrationNumber: allData.companyRegistrationNumber,
+              directorName: allData.directorName
+            },
+            experianData: allData.experianData, // Populated by CreditCheckStep
+            bankAnalysis: allData.bankAnalysis  // Populated by BankStatementsStep
+          };
 
-          // Append regular fields
-          (Object.keys(values) as Array<keyof typeof values>).forEach(key => {
-            if (key !== 'bankStatements' && values[key] !== undefined) {
-              formData.append(key, values[key] as string | Blob);
-            }
+          const response = await fetch("/api/match-lenders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
           });
 
-          // Append files
-          if (values.bankStatements && (values.bankStatements as File[]).length > 0) {
-            (values.bankStatements as File[]).forEach((file: File) => formData.append('bankStatements', file));
+          const result = await response.json();
+          console.log("Lender Matching Result:", result);
+
+          // Determine outcome based on matches
+          if (result.success && result.matches && result.matches.length > 0) {
+            setMatchResult("matched");
+          } else {
+            setMatchResult("no_match");
           }
 
-          console.log("Submitting formData", formData);
+          setStep(8);
 
-          // Mock API success + decision
-          setTimeout(() => {
-            setMatchResult("matched");
-            setStep(8);
-          }, 1500);
-
-          // const res = await fetch("/api/application", { method: "POST", body: formData });
         } catch (e) {
-          console.error(e);
+          console.error("Submission Failed:", e);
+          // Handle error state or show toast
         }
       }
     }

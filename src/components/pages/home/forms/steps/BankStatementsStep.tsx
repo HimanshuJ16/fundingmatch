@@ -37,9 +37,15 @@ export const BankStatementsStep = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setAnalysisData(data.data);
-        // Here you would pass 'data.data' to your rules engine
-        console.log("Financial Analysis Data:", data.data);
+
+        // Backend now returns:
+        // data.data -> Aggregated Object (for Form)
+        // data.accounts -> Array of Account Details (for UI)
+
+        setAnalysisData(data.accounts || []); // Use array for display loop (User prefers this UI)
+        setValue("bankAnalysis", data.data); // Persist aggregated object to form state
+
+        console.log("Financial Analysis Data (Aggregated):", data.data);
       }
     } catch (error) {
       console.error("Failed to fetch analysis", error);
@@ -102,6 +108,7 @@ export const BankStatementsStep = () => {
         const data = await response.json();
         if (data.success) {
           setUploadAnalysis(data.data);
+          setValue("bankAnalysis", data.data); // Persist to form
           console.log("Upload Analysis:", data.data);
         }
       }

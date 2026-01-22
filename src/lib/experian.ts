@@ -38,10 +38,11 @@ export async function getExperianAccessToken(): Promise<string> {
 export interface ExperianCompanySummary {
   registrationNumber: string;
   companyName: string;
+  companyStatus: string; // [New]
   incorporationDate: string;
   sicCodes: { code: string; description: string }[];
-  creditScore: number;
-  creditBand: string;
+  commercialDelphiScore: number; // Renamed from creditScore
+  commercialBand: string; // Renamed from creditBand
   creditLimit: number;
   creditRating: number;
   latestTurnover: number | null;
@@ -189,10 +190,11 @@ function parseExperianCompanyData(data: any): ExperianCompanySummary {
   return {
     registrationNumber: get(['RegNumber'], ''),
     companyName: get(['CommercialName'], ''),
+    companyStatus: get(['CurrentStatus'], 'Active'), // Default to Active if missing
     incorporationDate: get(['Identification', 'IncorporationDate'], ''),
     sicCodes: sicCodes,
-    creditScore: parseInt(get(['CommercialDelphi', 'CommDelphiScore'], '0')),
-    creditBand: get(['CommercialDelphi', 'CommDelphiBandText'], ''),
+    commercialDelphiScore: parseInt(get(['CommercialDelphi', 'CommDelphiScore'], '0')),
+    commercialBand: get(['CommercialDelphi', 'CommDelphiBandText'], ''),
     creditLimit: parseInt(get(['CommercialDelphi', 'CreditLimit'], '0')),
     creditRating: parseInt(get(['CommercialDelphi', 'CreditRating'], '0')),
     latestTurnover: latestTurnover,
@@ -284,6 +286,7 @@ export interface ExperianDirectorDetailedSummary {
     disqualStartDate?: string;
     disqualEndDate?: string;
   };
+  personalCreditScore?: number | null;
 }
 
 function parseExperianDirectorData(data: any): ExperianDirectorDetailedSummary {
@@ -346,6 +349,99 @@ function parseExperianDirectorData(data: any): ExperianDirectorDetailedSummary {
   };
 }
 
+// [New] Delphi Select (Consumer) API Integration
+export async function checkConsumerCredit(director: ExperianDirectorDetailedSummary): Promise<number | null> {
+  const token = await getExperianAccessToken();
+
+  // Map Director Summary to Delphi Select Input
+  const payload = {
+    Submission: {
+      Application: {
+        ApplicationType: "QL", // Personal Loan Quotation (Soft Search)
+        ProductCode: "DelphiSelect"
+      },
+      Applicants: [
+        {
+          ApplicantIdentifier: 1,
+          Person: {
+            PersonIdentifier: 1,
+            Name: {
+              Forename: director.personalInfo.forename,
+              Surname: director.personalInfo.surname,
+              Title: "Mr" // Simplification: Title is often required; could derive or omit if optional
+            },
+            DateOfBirth: director.personalInfo.dateOfBirth
+          },
+          ApplicantData: {
+            ApplicantIdentifier: 1
+          }
+        }
+      ],
+      Locations: [
+        {
+          LocationIdentifier: 1,
+          UKLocation: {
+            HouseNumber: director.homeAddress.houseNumber?.substring(0, 10),
+            HouseName: director.homeAddress.houseName?.substring(0, 50),
+            Street: director.homeAddress.street?.substring(0, 60),
+            Postcode: director.homeAddress.postcode?.replace(/\s+/g, ''),
+            PostTown: director.homeAddress.town
+          }
+        }
+      ],
+      Residencies: [
+        {
+          LocationIdentifier: 1,
+          ApplicantIdentifier: 1,
+          ResidencyDateFrom: "2020-01-01", // Placeholder, usually required
+          ResidencyType: "O" // Owner
+        }
+      ],
+      Options: {
+        ProductCode: "DelphiSelect",
+        TestDatabase: "A" // Sandbox specific
+      }
+    }
+  };
+
+  try {
+    const response = await fetch(
+      `${EXPERIAN_BASE_URL}/risk/consumer/v2/dataselect/application`,
+      {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Consumer API Error:", text);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // Path: Response.ConsumerSummary.PremiumValueData.Scoring.E5S051 (Observed in Sandbox)
+    let score = data.Response?.ConsumerSummary?.PremiumValueData?.Scoring?.E5S051;
+
+    if (score === undefined) {
+      // Fallback paths
+      score = data.Submission?.Applicants?.[0]?.ApplicantData?.Score?.DelphiScore;
+    }
+
+    return typeof score === 'number' ? score : null;
+
+  } catch (e) {
+    console.error("Consumer Exception:", e);
+    return null;
+  }
+}
+
 export async function getExperianDirectorDetails(directorId: string) {
   try {
     const token = await getExperianAccessToken();
@@ -371,11 +467,24 @@ export async function getExperianDirectorDetails(directorId: string) {
 
     const summary = parseExperianDirectorData(rawData);
 
-    console.log("Summary:", summary);
+    // [New] Check Personal Credit Score if we have address and DOB
+    let personalCreditScore = null;
+    if (summary.personalInfo.dateOfBirth && summary.homeAddress.postcode) {
+      console.log("Checking Personal Credit Score for Director...");
+      try {
+        personalCreditScore = await checkConsumerCredit(summary);
+        console.log("Personal Credit Score:", personalCreditScore);
+      } catch (err) {
+        console.error("Failed to check personal credit:", err);
+      }
+    }
 
     return {
       raw: rawData,
-      summary: summary
+      summary: {
+        ...summary,
+        personalCreditScore
+      }
     };
   } catch (error) {
     console.error("Experian Director Details Error:", error);

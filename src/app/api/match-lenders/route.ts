@@ -18,14 +18,14 @@ export async function POST(req: Request) {
       company: {
         type: formData.businessType || "limited_company",
         timeTradingMonths: parseInt(formData.timeTrading) || 0, // Frontend should send numeric or we parse string "12 months"
-        hasFiledAccounts: experianData.company?.accounts_filed || true, // Default to true if not strictly checked yet
-        insolvencyEvents: experianData.company?.insolvency_detected || false,
-        iva: experianData.director?.iva_detected || false,
+        hasFiledAccounts: experianData.company?.summary?.companyStatus === "Active", // Simplification based on Status
+        insolvencyEvents: (experianData.company?.summary?.legalNotices?.count > 0 || experianData.company?.summary?.insolvency?.count > 0),
+        iva: false, // Not directly in company data, usually personal. Default false.
       },
       credit: {
-        experianScore: experianData.director?.personalDetails?.score || experianData.director?.score || 0, // Director Personal
-        experianDelphiScore: experianData.company?.commercialDelphiScore?.score || 0, // Company Commercial
-        experianBand: experianData.company?.commercialDelphiScore?.bandIndex, // If available
+        experianScore: experianData.director?.summary?.personalCreditScore || 0, // Verified Personal Score (e.g. 837)
+        experianDelphiScore: experianData.company?.summary?.commercialDelphiScore || 0, // Verified Commercial Score (e.g. 85)
+        experianBand: experianData.company?.summary?.commercialBand, // Verified Band (e.g. "Minimal Risk")
       },
       financials: {
         averageMonthlyTurnover: bankAnalysis.average_monthly_income || 0,
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         averageEodBalance: bankAnalysis.average_eod_balance || 0,
         lowBalanceDays: bankAnalysis.low_balance_days_count || 0,
         negativeBalanceDays: bankAnalysis.negative_balance_days_count || 0,
-        existingLenderCount: bankAnalysis.detected_repayments?.count || 0,
+        existingLenderCount: bankAnalysis.detected_repayments?.lenders?.length || 0, // Use unique lender count, not transaction count
         detectedCardProviders: bankAnalysis.detected_card_providers || [],
       }
     };
@@ -60,6 +60,9 @@ export async function POST(req: Request) {
     // or just filter for now as "Matched".
     const matched = results.filter(r => r.match);
     const unmatched = results.filter(r => !r.match);
+
+    console.log("Matched lenders:", matched);
+    console.log("Unmatched lenders:", unmatched);
 
     return NextResponse.json({
       success: true,
