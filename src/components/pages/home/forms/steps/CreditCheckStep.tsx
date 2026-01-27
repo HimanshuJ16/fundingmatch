@@ -16,6 +16,8 @@ export const CreditCheckStep = () => {
       const checkCredit = async () => {
         setChecking(true);
         try {
+          // TEMPORARY: Commented out Experian API call until production keys are available
+          /*
           const response = await fetch("/api/experian/check-eligibility", {
             method: "POST",
             headers: {
@@ -24,6 +26,28 @@ export const CreditCheckStep = () => {
             body: JSON.stringify({ companyNumber, directorName }),
           });
           const data = await response.json();
+          */
+
+          // Mock successful response
+          const data: any = {
+            // company: {
+            //   summary: {
+            //     companyName: "Mock Company Ltd",
+            //     registrationNumber: companyNumber,
+            //     companyStatus: "Active",
+            //     creditRating: 90,
+            //     creditLimit: 50000,
+            //   }
+            // },
+            // director: {
+            //   summary: {
+            //     personalCreditScore: 999
+            //   }
+            // }
+          };
+
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
+
           setResult(data);
           // Optionally store relevant data in form
           if (data && !data.error) {

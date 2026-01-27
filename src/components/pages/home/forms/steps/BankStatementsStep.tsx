@@ -3,7 +3,11 @@ import { useFormContext } from "react-hook-form";
 import { usePlaidLink } from "react-plaid-link";
 import { QuickMatchFormData } from "@/schemas/quickmatchform.schema";
 
-export const BankStatementsStep = () => {
+interface BankStatementsStepProps {
+  onAnalysisChange?: (isAnalyzing: boolean) => void;
+}
+
+export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps) => {
   const { register, setValue, watch, formState: { errors } } = useFormContext<QuickMatchFormData>();
   const [method, setMethod] = useState<"upload" | "link">("upload");
   const [files, setFiles] = useState<File[]>([]);
@@ -77,6 +81,10 @@ export const BankStatementsStep = () => {
 
   const [uploadAnalysis, setUploadAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  useEffect(() => {
+    onAnalysisChange?.(isAnalyzing);
+  }, [isAnalyzing, onAnalysisChange]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

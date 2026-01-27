@@ -1,31 +1,29 @@
 import { NextResponse } from "next/server";
 import { matchLenders, ApplicationData } from "@/lib/lender-rules";
+import { prisma } from "@/lib/prisma"; // Import Prisma client
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Validate or reconstruct ApplicationData from the request body
-    // The body might contain separate objects for 'formData', 'bankAnalysis', 'experianData'
-    // We map them to our schema.
-
     // Safe extraction with defaults
     const formData = body.formData || {};
     const bankAnalysis = body.bankAnalysis || {};
     const experianData = body.experianData || {};
+    const plaidConnectionId = body.plaidConnectionId;
 
     const applicationData: ApplicationData = {
       company: {
         type: formData.businessType || "limited_company",
-        timeTradingMonths: parseInt(formData.timeTrading) || 0, // Frontend should send numeric or we parse string "12 months"
-        hasFiledAccounts: experianData.company?.summary?.companyStatus === "Active", // Simplification based on Status
+        timeTradingMonths: parseInt(formData.timeTrading) || 0,
+        hasFiledAccounts: experianData.company?.summary?.companyStatus === "Active",
         insolvencyEvents: (experianData.company?.summary?.legalNotices?.count > 0 || experianData.company?.summary?.insolvency?.count > 0),
-        iva: false, // Not directly in company data, usually personal. Default false.
+        iva: false,
       },
       credit: {
-        experianScore: experianData.director?.summary?.personalCreditScore || 0, // Verified Personal Score (e.g. 837)
-        experianDelphiScore: experianData.company?.summary?.commercialDelphiScore || 0, // Verified Commercial Score (e.g. 85)
-        experianBand: experianData.company?.summary?.commercialBand, // Verified Band (e.g. "Minimal Risk")
+        experianScore: experianData.director?.summary?.personalCreditScore || 0,
+        experianDelphiScore: experianData.company?.summary?.commercialDelphiScore || 0,
+        experianBand: experianData.company?.summary?.commercialBand,
       },
       financials: {
         averageMonthlyTurnover: bankAnalysis.average_monthly_income || 0,
@@ -33,7 +31,7 @@ export async function POST(req: Request) {
         averageEodBalance: bankAnalysis.average_eod_balance || 0,
         lowBalanceDays: bankAnalysis.low_balance_days_count || 0,
         negativeBalanceDays: bankAnalysis.negative_balance_days_count || 0,
-        existingLenderCount: bankAnalysis.detected_repayments?.lenders?.length || 0, // Use unique lender count, not transaction count
+        existingLenderCount: bankAnalysis.detected_repayments?.lenders?.length || 0,
         detectedCardProviders: bankAnalysis.detected_card_providers || [],
       }
     };
@@ -42,7 +40,6 @@ export async function POST(req: Request) {
     if (typeof formData.timeTrading === 'string') {
       const match = formData.timeTrading.match(/(\d+)/);
       if (match) {
-        // Check unit
         if (formData.timeTrading.toLowerCase().includes('year')) {
           applicationData.company.timeTradingMonths = parseInt(match[1]) * 12;
         } else {
@@ -51,29 +48,93 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("Matching lenders for data:", JSON.stringify(applicationData, null, 2));
-
+    console.log("Matching lenders for application data...");
     const results = matchLenders(applicationData);
-
-    // Filter only matched lenders? Or return all with status?
-    // Let's return all so UI can show "Preferred" vs "Refused" if needed, 
-    // or just filter for now as "Matched".
     const matched = results.filter(r => r.match);
     const unmatched = results.filter(r => !r.match);
 
-    console.log("Matched lenders:", matched);
-    console.log("Unmatched lenders:", unmatched);
+    // --- SAVE TO DATABASE ---
+    console.log("Saving application to database...");
+
+    // Prepare Director Data
+    let directorFirstName = "Director";
+    let directorLastName = "User";
+
+    if (formData.businessType === "sole_trader") {
+      directorFirstName = formData.firstName || "Director";
+      directorLastName = formData.lastName || "User";
+    } else if (formData.directorName) {
+      // Basic split for "John Doe"
+      const parts = formData.directorName.split(' ');
+      directorFirstName = parts[0];
+      directorLastName = parts.slice(1).join(' ') || "";
+    }
+
+    // Determine Company Name
+    const determinedCompanyName =
+      (formData.businessType === "sole_trader" ? formData.tradingName : formData.companyName) ||
+      experianData.company?.summary?.companyName ||
+      "Unknown";
+
+    // Create the application record
+    const application = await prisma.quickMatchApplication.create({
+      data: {
+        businessType: formData.businessType || "limited_company",
+
+        // Limited Company Fields
+        companyName: determinedCompanyName,
+        companyNumber: formData.companyRegistrationNumber || experianData.company?.summary?.registrationNumber,
+        registeredAddress: formData.registeredAddress || experianData.company?.summary?.registeredAddress || "",
+
+        // Sole Trader Fields (if applicable)
+        // ... (can populate if businessType is sole_trader)
+        timeTrading: String(applicationData.company.timeTradingMonths),
+
+        // Contact
+        email: formData.email,
+        mobileNumber: formData.mobileNumber,
+
+        fundingAmount: formData.fundingAmount
+          ? parseFloat(String(formData.fundingAmount).replace(/[^0-9.]/g, '') || "0")
+          : 0,
+
+        creditCheckConsent: true, // Implied by reaching this step
+        experianCompanyData: experianData.company?.summary || {},
+
+        bankStatementAnalysis: bankAnalysis,
+
+        status: matched.length > 0 ? "MATCHED" : "REJECTED",
+        matchedLenders: matched as any,
+
+        plaidConnectionId: plaidConnectionId || undefined,
+
+        // Create Director
+        directors: {
+          create: {
+            firstName: directorFirstName,
+            lastName: directorLastName,
+            residentialAddress: formData.residentialAddress || "", // Capture address
+            dob: formData.directorDateOfBirth ? new Date(formData.directorDateOfBirth) : new Date(),
+            homeowner: formData.homeOwnerStatus || false,
+            experianData: experianData.director?.summary || {},
+          }
+        }
+      }
+    });
+
+    console.log("Application saved with ID:", application.id);
 
     return NextResponse.json({
       success: true,
       matches: matched,
-      unmatched: unmatched, // useful for debugging or "Why didn't I match?"
+      unmatched: unmatched,
+      applicationId: application.id
     });
 
   } catch (error: any) {
-    console.error("Error matching lenders:", error);
+    console.error("Error matching lenders / saving to DB:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to match lenders" },
+      { error: error.message || "Failed to process application" },
       { status: 500 }
     );
   }

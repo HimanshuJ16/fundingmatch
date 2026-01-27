@@ -17,6 +17,8 @@ import { ConfirmationStep } from "./steps/ConfirmationStep";
 export const QuickMatchFormSection = () => {
   const [step, setStep] = useState(1);
   const [matchResult, setMatchResult] = useState<"matched" | "no_match" | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzingStatements, setIsAnalyzingStatements] = useState(false);
   const methods = useForm<QuickMatchFormData>({
     resolver: zodResolver(quickMatchSchema),
     mode: "onChange",
@@ -95,17 +97,31 @@ export const QuickMatchFormSection = () => {
         const allData = methods.getValues() as any;
         console.log("Form Completed. Submitting Data:", allData);
 
+        setIsSubmitting(true);
+
         try {
           // Construct Payload for Matching Engine
           const payload = {
             formData: {
               businessType: allData.businessType,
               timeTrading: allData.timeTrading || "12 months", // Fallback if missing
+              companyName: allData.companyName,
               companyRegistrationNumber: allData.companyRegistrationNumber,
-              directorName: allData.directorName
+              registeredAddress: allData.registeredAddress,
+              directorName: allData.directorName,
+              residentialAddress: allData.residentialAddress,
+              email: allData.email,
+              mobileNumber: allData.mobileNumber,
+              fundingAmount: allData.fundingAmount === "Custom" ? allData.fundingAmountCustom : allData.fundingAmount,
+              directorDateOfBirth: allData.directorDateOfBirth,
+              homeOwnerStatus: allData.homeOwnerStatus,
+              firstName: allData.firstName, // Sole trader first name
+              lastName: allData.lastName,   // Sole trader last name
+              tradingName: allData.tradingName, // Sole trader trading name
             },
             experianData: allData.experianData, // Populated by CreditCheckStep
-            bankAnalysis: allData.bankAnalysis  // Populated by BankStatementsStep
+            bankAnalysis: allData.bankAnalysis,  // Populated by BankStatementsStep
+            plaidConnectionId: allData.plaidConnectionId // Plaid Connection ID if linked
           };
 
           const response = await fetch("/api/match-lenders", {
@@ -129,6 +145,8 @@ export const QuickMatchFormSection = () => {
         } catch (e) {
           console.error("Submission Failed:", e);
           // Handle error state or show toast
+        } finally {
+          setIsSubmitting(false);
         }
       }
     }
@@ -264,7 +282,7 @@ export const QuickMatchFormSection = () => {
                 Upload your business bank statements
               </p>
             </div>
-            <BankStatementsStep />
+            <BankStatementsStep onAnalysisChange={setIsAnalyzingStatements} />
           </>
         );
       case 8:
@@ -359,10 +377,11 @@ export const QuickMatchFormSection = () => {
           <button
             onClick={step === 8 ? () => window.location.reload() : handleNext}
             type="button"
-            className="all-[unset] box-border flex flex-1 sm:flex-none sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity"
+            className={`all-[unset] box-border flex flex-1 sm:flex-none sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity ${(isSubmitting || isAnalyzingStatements) ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={isSubmitting || isAnalyzingStatements}
           >
             <div className="relative w-fit -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
-              {getButtonText()}
+              {isSubmitting ? "Analyzing..." : isAnalyzingStatements ? "Analysing Statements..." : getButtonText()}
             </div>
           </button>
         </div>
