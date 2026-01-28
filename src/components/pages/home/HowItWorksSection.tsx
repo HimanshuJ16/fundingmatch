@@ -9,7 +9,7 @@ const HowItWorksSection = () => {
       <div className="flex flex-col w-full max-w-7xl mx-auto px-4 gap-12">
         <HowItWorksHeaderSection />
         <HowItWorksDetailsSection />
-        <CallToActionSection />
+        {/* <CallToActionSection /> */}
       </div>
     </div>
   );

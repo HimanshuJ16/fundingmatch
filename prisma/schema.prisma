@@ -17,7 +17,7 @@ model QuickMatchApplication {
   registeredAddress String?
 
   // --- Sole Trader Fields (Step 2) ---
-  timeTrading  String?
+  timeTrading String?
 
   // --- Contact Details (Step 4) ---
   email        String
@@ -75,4 +75,14 @@ model Director {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ContactRequest {
+  id          String   @id @default(uuid())
+  name        String
+  companyName String
+  email       String
+  phone       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -83,7 +83,7 @@ export const HeroSection = () => {
           </ol>
         </section>
 
-        <div className="w-full lg:w-auto flex justify-center lg:block">
+        <div id="apply-form-section" className="w-full lg:w-auto flex justify-center lg:block">
           <QuickMatchFormSection />
         </div>
       </div>
