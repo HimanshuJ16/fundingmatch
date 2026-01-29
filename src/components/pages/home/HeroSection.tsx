@@ -64,7 +64,7 @@ export const HeroSection = () => {
             </p>
           </div>
 
-          <ol className="flex-col hidden lg:flex w-full max-w-[589px] items-start gap-4 lg:gap-[17px] relative">
+          {/* <ol className="flex-col hidden lg:flex w-full max-w-[589px] items-start gap-4 lg:gap-[17px] relative">
             {steps.map((step) => (
               <li
                 key={step.number}
@@ -80,7 +80,7 @@ export const HeroSection = () => {
                 </div>
               </li>
             ))}
-          </ol>
+          </ol> */}
         </section>
 
         <div id="apply-form-section" className="w-full lg:w-auto flex justify-center lg:block">

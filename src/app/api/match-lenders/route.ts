@@ -1,10 +1,35 @@
 import { NextResponse } from "next/server";
 import { matchLenders, ApplicationData } from "@/lib/lender-rules";
 import { prisma } from "@/lib/prisma"; // Import Prisma client
+import { sendEmail } from "@/lib/email";
+import { generateQuickMatchEmailHtml } from "@/lib/email-templates/quick-match-admin";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+
+    let body: any = {};
+    let emailAttachments: any[] = [];
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const jsonString = formData.get("jsonPayload") as string;
+      body = JSON.parse(jsonString || "{}");
+
+      const files = formData.getAll("files");
+      for (const file of files) {
+        if (file instanceof File) {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          emailAttachments.push({
+            filename: file.name,
+            content: buffer,
+            contentType: file.type || "application/pdf"
+          });
+        }
+      }
+    } else {
+      body = await req.json();
+    }
 
     // Safe extraction with defaults
     const formData = body.formData || {};
@@ -123,6 +148,31 @@ export async function POST(req: Request) {
     });
 
     console.log("Application saved with ID:", application.id);
+
+    // --- SEND ADMIN EMAIL ---
+    try {
+      const emailHtml = generateQuickMatchEmailHtml({
+        formData: formData,
+        applicationData: applicationData,
+        bankAnalysis: bankAnalysis,
+        matchedLenders: matched
+      });
+
+      // Send email to admin (using les@fundingmatch.ai as previously discussed)
+      // If environment variable ADMIN_EMAIL is set, use that, else default.
+      const adminEmail = process.env.ADMIN_EMAIL || "himanshujangir16@gmail.com";
+
+      await sendEmail({
+        to: [adminEmail],
+        subject: `New Quick Match Application - ${determinedCompanyName}`,
+        html: emailHtml,
+        from: "Funding Match <les@fundingmatch.ai>",
+        attachments: emailAttachments
+      });
+      console.log(`Admin email sent to ${adminEmail}`);
+    } catch (emailErr) {
+      console.error("Failed to send admin email:", emailErr);
+    }
 
     return NextResponse.json({
       success: true,

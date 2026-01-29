@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
-import { renderContactEmailHTML } from "@/lib/email-renderer";
+import { renderContactEmailHTML } from "@/lib/email-templates/contact-admin";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
@@ -32,9 +32,10 @@ export async function POST(req: Request) {
 
     const html = renderContactEmailHTML({ name, companyName, email, phone });
     const text = `New Contact Request\n\nName: ${name}\nCompany: ${companyName}\nEmail: ${email}\nPhone: ${phone}`;
+    const adminEmail = process.env.ADMIN_EMAIL || "himanshujangir16@gmail.com";
 
     await sendEmail({
-      to: ["les@fundingmatch.ai"],
+      to: [adminEmail],
       subject: `New Contact Request | ${name} from ${companyName}`,
       html,
       text,

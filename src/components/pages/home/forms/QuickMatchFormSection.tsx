@@ -101,7 +101,9 @@ export const QuickMatchFormSection = () => {
 
         try {
           // Construct Payload for Matching Engine
-          const payload = {
+          const formDataToSubmit = new FormData();
+
+          const jsonPayload = {
             formData: {
               businessType: allData.businessType,
               timeTrading: allData.timeTrading || "12 months", // Fallback if missing
@@ -118,16 +120,26 @@ export const QuickMatchFormSection = () => {
               firstName: allData.firstName, // Sole trader first name
               lastName: allData.lastName,   // Sole trader last name
               tradingName: allData.tradingName, // Sole trader trading name
+              consentCreditCheck: allData.consentCreditCheck,
             },
             experianData: allData.experianData, // Populated by CreditCheckStep
             bankAnalysis: allData.bankAnalysis,  // Populated by BankStatementsStep
             plaidConnectionId: allData.plaidConnectionId // Plaid Connection ID if linked
           };
 
+          formDataToSubmit.append("jsonPayload", JSON.stringify(jsonPayload));
+
+          // Append files if upload method was used
+          if (files && files.length > 0) {
+            files.forEach((file: File) => {
+              formDataToSubmit.append("files", file);
+            });
+          }
+
           const response = await fetch("/api/match-lenders", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            // headers: { "Content-Type": "application/json" }, // REMOVED: let browser set multipart boundary
+            body: formDataToSubmit
           });
 
           const result = await response.json();
