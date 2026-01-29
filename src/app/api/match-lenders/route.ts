@@ -155,7 +155,7 @@ export async function POST(req: Request) {
         formData: formData,
         applicationData: applicationData,
         bankAnalysis: bankAnalysis,
-        matchedLenders: matched
+        matchedLenders: results
       });
 
       // Send email to admin (using les@fundingmatch.ai as previously discussed)
