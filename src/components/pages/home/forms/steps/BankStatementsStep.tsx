@@ -156,8 +156,15 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
         setValue("plaidConnectionId", data.connection_id);
 
         // Fetch account details immediately
-        fetchAccounts(data.connection_id);
-        fetchAnalysis(data.connection_id);
+        setIsAnalyzing(true);
+        try {
+          await Promise.all([
+            fetchAccounts(data.connection_id),
+            fetchAnalysis(data.connection_id)
+          ]);
+        } finally {
+          setIsAnalyzing(false);
+        }
       }
     } catch (error) {
       console.error("Error exchanging public token:", error);

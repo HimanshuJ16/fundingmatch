@@ -87,7 +87,7 @@ export const CreditCheckStep = () => {
             type="checkbox"
             {...register("consentCreditCheck")}
             className="w-5 h-5 rounded border-gray-400 bg-[#ffffff0a] text-blue-600 focus:ring-blue-500"
-            disabled={checking}
+            // disabled={checking}
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -98,7 +98,7 @@ export const CreditCheckStep = () => {
             I understand this does not affect my credit rating.
           </span>
         </div>
-        {checking && (
+        {/* {checking && (
           <div className="absolute right-4 top-4 flex items-center gap-2">
             <span className="text-xs text-[#ffffff99]">Checking...</span>
             <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -106,9 +106,9 @@ export const CreditCheckStep = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
           </div>
-        )}
+        )} */}
       </label>
-      {result && !result.error && (
+      {/* {result && !result.error && (
         <div className="w-full p-4 bg-[#b0efbd1a] border border-[#b0efbd] rounded-xl flex items-center gap-3">
           <div className="w-6 h-6 rounded-full bg-[#b0efbd] flex items-center justify-center text-[#121e36]">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,7 +120,7 @@ export const CreditCheckStep = () => {
             <p className="text-xs text-[#ffffffcc]">We have successfully verified the business details.</p>
           </div>
         </div>
-      )}
+      )} */}
       {errors.consentCreditCheck && (
         <p className="text-red-400 text-xs mt-1">{String(errors.consentCreditCheck.message)}</p>
       )}

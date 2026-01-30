@@ -46,14 +46,14 @@ export async function POST(req: Request) {
       const prompt = `
       You are a professional Financial Analysis Engine.
 
-You will be given a bank statement (PDF or CSV).
+You will be given a bank statement (PDF text or CSV).
 Your task is to parse it and return a SINGLE, VALID JSON OBJECT that follows the schema exactly.
 
 ━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT (JSON ONLY)
 ━━━━━━━━━━━━━━━━━━━━
 {
-  "_thought_process": "Very brief explanation of how values were derived",
+  "_thought_process": "Brief explanation of how values were derived (e.g., 'Detected 33 days of data, treated as 1.1 months. Detected 'D' suffix on balances indicating overdraft.')",
   "average_monthly_income": number,
   "average_eod_balance": number,
   "detected_repayments": {
@@ -63,82 +63,71 @@ OUTPUT FORMAT (JSON ONLY)
   },
   "low_balance_days_count": number, // Count of days where EOD balance < 300
   "negative_balance_days_count": number, // Count of days where EOD balance < 0
-  "average_monthly_card_turnover": number, // Revenue specifically from card processors
+  "average_monthly_card_turnover": number, // Revenue specifically from card processors (POS)
   "detected_card_providers": string[], // List of detected card processor names
   "currency_code": string
 }
 
 ⚠️ Rules:
-- Output MUST be valid JSON. No markdown. No commentary outside JSON.
-- All numbers must be plain numbers (no symbols, commas, or text).
-- If any value cannot be determined, return 0.
-- Do NOT guess values. Only derive from the file.
-- Do NOT invent lenders.
-- Use decimals where appropriate.
-- Use lowercase ISO currency codes (e.g., "GBP", "USD", "EUR").
+- Output MUST be valid JSON.
+- All numbers must be plain numbers (no symbols, commas).
+- Return 0 if a value cannot be determined.
+- Do NOT guess. Derive strictly from the file.
 
 ━━━━━━━━━━━━━━━━━━━━
-HOW TO CALCULATE
+CALCULATION LOGIC (STRICT)
 ━━━━━━━━━━━━━━━━━━━━
 
-1. Average Monthly Income:
+1. PRE-PROCESSING & DATES:
+- **Currency:** Check IBAN (e.g., "GB" = GBP) or currency symbols. Default to GBP.
+- **Date Range:** Identify the *First Transaction Date* and *Last Transaction Date*.
+- **Month Normalization (Crucial):**
+  - Calculate Total_Days = (Last Date - First Date) + 1.
+  - If "Total_Days" <= 45: Treat as **1 Month** (Divisor = 1).
+  - If "Total_Days" > 45: Calculate "Months = Total_Days / 30.44".
+  - Use this calculated "Months" value for all "Average Monthly" calculations.
+
+2. AVERAGE MONTHLY INCOME:
 - Identify all CREDIT / INFLOW transactions.
-- Exclude:
-  - Internal transfers between own accounts
-  - Refund reversals
-  - Obvious self-movements (same-name transfers)
-- Group by calendar month found in the data.
-- For each month:
-  - Sum all qualifying inflows.
-- Return:
-  - (Sum of all monthly totals) ÷ (Number of distinct months)
+- **Exclusions (Must Remove):**
+  - Internal transfers (e.g., Sender Name matches Account Name, "Transfer to Self").
+  - Refund reversals.
+  - Loan payouts (large round sums from identified lenders).
+- **Calculation:** (Sum of valid inflows) ÷ (Calculated Months).
 
-If the file only covers one month, return that month’s total.
+3. END-OF-DAY (EOD) BALANCE & HEALTH:
+- Scan the "Balance" column.
+- **Sign Detection (Critical):**
+  - If a balance has a suffix "D", "Dr", "Debit", "OD", or is enclosed in "()", treat it as **NEGATIVE**.
+  - Example: "15,000 D" = -15000.
+- **Metrics:**
+  - "average_eod_balance": Arithmetic mean of all daily closing balances.
+  - "low_balance_days_count": Count of days where Balance < 300.
+  - "negative_balance_days_count": Count of days where Balance < 0.
+- If no running balance column exists, return 0 for counts.
 
-2. Average End-of-Day Balance & Low Balance Checks:
-- If a running balance column exists:
-  - Use all daily ending balances.
-  - **CRITICAL:** Check for suffixes like "D", "Dr", "Debit", "OD", or enclosing parentheses (e.g., "4,500 D" or "(4,500)").
-  - Treat these values as NEGATIVE (Overdraft).
-  - Return the arithmetic mean for "average_eod_balance".
-  - Count how many days the balance was below 300 for "low_balance_days_count".
-  - Count how many days the balance was below 0 for "negative_balance_days_count".
-- If not:
-  - Use: (Opening Balance + Closing Balance) ÷ 2
-  - Return 0 for counts as they cannot be accurately determined.
-
-3. Existing Repayments:
+4. REPAYMENTS & DEBT:
 - Scan all DEBIT transactions.
-- A repayment is any payment that:
-  - Appears recurring OR
-  - Matches lender-related keywords OR
-  - Is clearly a loan/finance/credit obligation
+- A repayment is any payment that matches the following **Keywords** OR **Known Lenders**:
 
-Match against these lender keywords:
-"loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow",
-"iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify",
-"worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance",
-"lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon",
-"metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan",
-"natwest business loan", "santander business loan",
-"zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty",
-"lending stream", "sunny", "satsuma", "peachy", "everyday loans",
-"novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan",
-"klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex",
-"barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card",
-"black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval",
-"vw finance", "bmw finance", "mercedes finance",
-"quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit",
-"barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan"
+  **A. Match against these lender keywords:**
+  "loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow"
 
-For detected repayments:
-- Count each transaction that qualifies
-- Sum their absolute debit values
-- Extract unique lender names (cleaned, human-readable)
+  **B. Match against these specific Lenders:**
+  - *Business/Fintech:* "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance", "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon"
+  - *Bank Loans:* "metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan", "natwest business loan", "santander business loan", "barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan"
+  - *Consumer/High Cost:* "zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty", "lending stream", "sunny", "satsuma", "peachy", "everyday loans", "quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit"
+  - *Cards/Retail Finance:* "novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan", "klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex", "barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card"
+  - *Vehicle:* "black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval", "vw finance", "bmw finance", "mercedes finance"
 
-4. Card Turnover & Providers:
+- **Calculation:**
+  - "count": Number of individual repayment transactions.
+  - "total_amount": Sum of absolute values of these transactions.
+  - "lenders": List of unique names (clean string, remove duplicates).
+
+5. CARD TURNOVER (MERCHANT SERVICES):
 - Scan CREDIT / INFLOW transactions.
-- Look for recurring settlement credits from these providers:
+- Look for recurring settlement credits strictly from these providers:
   - Worldpay (WORLD PAY, WORLDPAY, WPY, VANTIV)
   - Barclaycard (BARCLAYCARD, BCL CARD SERV)
   - Elavon (ELAVON, ELAVON FIN SERV)
@@ -155,19 +144,16 @@ For detected repayments:
   - AIB Merchant Services (AIB MS)
   - Paymentsense, Handepay, Takepayments, EVO Payments, TSYS
   - Stripe, PayPal, Adyen, Checkout.com
-- Sum the total value of these specific transactions.
-- Calculate average monthly total (Total Sum ÷ Months).
-- List the unique provider names found.
-
-5. Currency:
-- Detect from symbols, headers, or metadata.
-- If unclear, default to "GBP".
+- **Calculation:** (Sum of these specific transactions) ÷ (Calculated Months).
+- **Note:** Treat "Uber Eats", "Just Eat", and "Deliveroo" as general income, NOT Card Turnover, unless explicitly requested.
 
 ━━━━━━━━━━━━━━━━━━━━
 FINAL CHECK
 ━━━━━━━━━━━━━━━━━━━━
 Before responding:
 - Validate JSON structure
+- Ensure "average_monthly_income" >= "average_monthly_card_turnover".
+- Ensure "detected_repayments.lenders" does not contain duplicates.
 - Ensure no fields are missing
 - Ensure all numbers are valid
 - Ensure lenders are unique

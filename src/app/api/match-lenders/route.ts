@@ -11,6 +11,9 @@ export async function POST(req: Request) {
     let body: any = {};
     let emailAttachments: any[] = [];
 
+    // Import helper
+    const { generatePlaidReport } = await import("@/lib/plaid-report");
+
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const jsonString = formData.get("jsonPayload") as string;
@@ -151,6 +154,34 @@ export async function POST(req: Request) {
 
     // --- SEND ADMIN EMAIL ---
     try {
+      // Generate Plaid Report if connected
+      if (plaidConnectionId) {
+        try {
+          const connection = await prisma.plaidConnection.findUnique({
+            where: { id: plaidConnectionId }
+          });
+
+          if (connection && connection.accessToken) {
+            console.log("Generating Plaid Report...");
+            const companyRegNumber = formData.companyRegistrationNumber || experianData.company?.summary?.registrationNumber;
+            const reportBuffer = await generatePlaidReport(
+              connection.accessToken,
+              determinedCompanyName,
+              companyRegNumber
+            );
+            emailAttachments.push({
+              filename: "OpenBankingReport.pdf",
+              content: reportBuffer,
+              contentType: "application/pdf"
+            });
+            console.log("Plaid Report attached.");
+          }
+        } catch (plaidErr) {
+          console.error("Failed to generate Plaid report:", plaidErr);
+          // Don't block email sending
+        }
+      }
+
       const emailHtml = generateQuickMatchEmailHtml({
         formData: formData,
         applicationData: applicationData,

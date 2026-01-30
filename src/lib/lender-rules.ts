@@ -83,7 +83,8 @@ export function matchLenders(data: ApplicationData): Lender[] {
     let passed = true;
 
     // Time trading: 6m (12m if Experian < 650)
-    const minTrading = data.credit.experianScore < 650 ? 12 : 6;
+    // const minTrading = data.credit.experianScore < 650 ? 12 : 6;
+    const minTrading = 6; // Defaulting to 6m as Experian data isn't available
     if (data.company.timeTradingMonths >= minTrading) {
       reasons.push(`Trading for ${data.company.timeTradingMonths} months (Min ${minTrading})`);
     } else {
@@ -141,13 +142,15 @@ export function matchLenders(data: ApplicationData): Lender[] {
 
     // Open banking 12m - approximated by time trading for now or assuming available if files provided
     // Filed accounts
-    if (data.company.hasFiledAccounts) {
-      reasons.push("Accounts filed");
-    } else {
-      passed = false;
-      refusals.push("No filed accounts (or not Limited Company)");
-    }
+    // if (data.company.hasFiledAccounts) {
+    //   reasons.push("Accounts filed");
+    // } else {
+    //   passed = false;
+    //   refusals.push("No filed accounts (or not Limited Company)");
+    // }
 
+    // Experian validation commented out due to missing production key
+    /*
     // Experian Band >= 3 (Approximation: Score > 60?)
     // If no band provided, use score: 0-100 range? 
     // Standard Commercial Delphi: Band 3 is usually > 45-50. Let's strict it to 60 for safety if not band.
@@ -171,13 +174,16 @@ export function matchLenders(data: ApplicationData): Lender[] {
       passed = false;
       refusals.push(`Experian Band ${band} < 3`);
     }
+    */
 
+    /*
     if (!data.company.insolvencyEvents) {
       reasons.push("No insolvency in last 24m");
     } else {
       passed = false;
       refusals.push("Insolvency event detected");
     }
+    */
 
     return { passed, reasons, refusals };
   });
@@ -228,6 +234,8 @@ export function matchLenders(data: ApplicationData): Lender[] {
       refusals.push(`Negative days (${data.financials.negativeBalanceDays}) > 8`);
     }
 
+    // Experian validation commented out due to missing production key
+    /*
     // Experian >= 600
     if (data.credit.experianScore >= 60) { // Assuming 0-100 scale? Or 0-1000? Most UK commercial likely 0-100 (Delphi).
       // Wait, prompt rules says "Experian >= 600". That implies 0-1000 scale or similar.
@@ -244,6 +252,7 @@ export function matchLenders(data: ApplicationData): Lender[] {
         refusals.push(`Director Score ${data.credit.experianScore} < 600`);
       }
     }
+    */
 
     return { passed, reasons, refusals };
   });
@@ -360,6 +369,8 @@ export function matchLenders(data: ApplicationData): Lender[] {
       refusals.push("Card Turnover < £5k");
     }
 
+    // Experian validation commented out due to missing production key
+    /*
     // Experian Delphi >= 200
     // Use the maximum of available scores to account for different scales (0-100 vs 0-999)
     const score = Math.max(data.credit.experianDelphiScore || 0, data.credit.experianScore || 0);
@@ -369,6 +380,7 @@ export function matchLenders(data: ApplicationData): Lender[] {
       passed = false;
       refusals.push(`Score ${score} < 200`);
     }
+    */
 
     // No other MCAs
     // existingLenderCount must be 0? Or just "No other MCAs"?
@@ -380,10 +392,12 @@ export function matchLenders(data: ApplicationData): Lender[] {
       refusals.push("Existing MCA detected");
     }
 
+    /*
     if (data.company.insolvencyEvents) {
       passed = false;
       refusals.push("Insolvency event detected");
     }
+    */
 
     return { passed, reasons, refusals };
   });

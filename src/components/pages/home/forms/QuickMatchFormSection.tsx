@@ -169,6 +169,9 @@ export const QuickMatchFormSection = () => {
     setStep(2);
   };
 
+  const bankAnalysis = watch("bankAnalysis");
+  const isStepSevenComplete = step === 7 ? !!bankAnalysis : true;
+
   const handleBack = () => {
     if (step > 1) {
       setStep(step - 1);
@@ -389,8 +392,8 @@ export const QuickMatchFormSection = () => {
           <button
             onClick={step === 8 ? () => window.location.reload() : handleNext}
             type="button"
-            className={`all-[unset] box-border flex flex-1 sm:flex-none sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity ${(isSubmitting || isAnalyzingStatements) ? "opacity-50 cursor-not-allowed" : ""}`}
-            disabled={isSubmitting || isAnalyzingStatements}
+            className={`all-[unset] box-border flex flex-1 sm:flex-none sm:w-[182px] items-center justify-center gap-2.5 pt-4 pb-[18px] px-[23px] relative rounded-[29px] overflow-hidden bg-[linear-gradient(106deg,rgba(165,215,171,1)_0%,rgba(147,195,195,1)_100%)] hover:opacity-90 cursor-pointer transition-opacity ${(isSubmitting || isAnalyzingStatements || !isStepSevenComplete) ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={isSubmitting || isAnalyzingStatements || !isStepSevenComplete}
           >
             <div className="relative w-fit -mt-px font-['Roobert-SemiBold',Helvetica] font-semibold text-[#121e36] text-[17px] tracking-[-0.34px] leading-[normal] whitespace-nowrap">
               {isSubmitting ? "Analyzing..." : isAnalyzingStatements ? "Analysing Statements..." : getButtonText()}
