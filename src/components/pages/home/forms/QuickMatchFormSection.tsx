@@ -31,6 +31,33 @@ export const QuickMatchFormSection = () => {
   const { trigger, setValue, watch, formState: { errors } } = methods;
   const businessType = watch("businessType");
 
+  const analyzeFiles = async (filesToAnalyze: File[]) => {
+    setIsAnalyzingStatements(true);
+    try {
+      const formData = new FormData();
+      filesToAnalyze.forEach((file) => {
+        formData.append("file", file);
+      });
+
+      const response = await fetch("/api/analyze-statement", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setValue("bankAnalysis", data.data); // Persist to form
+          console.log("Upload Analysis:", data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing files:", error);
+    } finally {
+      setIsAnalyzingStatements(false);
+    }
+  };
+
   const handleNext = async () => {
     let isValid = false;
     if (step === 1) {
@@ -85,10 +112,20 @@ export const QuickMatchFormSection = () => {
             // isValid = false; // Uncomment to enforce
           }
         }
-      } else if (method === "link") {
         if (!isLinked) {
           console.warn("Bank not linked");
           // isValid = false; // Uncomment to enforce
+        }
+      }
+
+      // Check if analysis is needed for upload method
+      // We check if we need to run analysis
+      const bankAnalysis = methods.getValues("bankAnalysis");
+      if (isValid && method === "upload") {
+        if (!bankAnalysis && files && (files as File[]).length > 0) {
+          // Trigger analysis instead of proceeding
+          await analyzeFiles(files as File[]);
+          return; // Stop here, user will click continue again to proceed
         }
       }
 
@@ -170,7 +207,15 @@ export const QuickMatchFormSection = () => {
   };
 
   const bankAnalysis = watch("bankAnalysis");
-  const isStepSevenComplete = step === 7 ? !!bankAnalysis : true;
+  const method = watch("bankStatementMethod");
+  const files = watch("bankStatements");
+
+  // Step 7 is complete if:
+  // 1. Method is link AND connected
+  // 2. Method is upload AND files uploaded (Analysis is now part of the "Next" flow so we allow button to be active if files exist)
+  const isStepSevenComplete = step === 7 ?
+    (method === 'link' ? !!watch("openBankingLinked") : ((files as File[])?.length > 0))
+    : true;
 
   const handleBack = () => {
     if (step > 1) {
@@ -297,7 +342,7 @@ export const QuickMatchFormSection = () => {
                 Upload your business bank statements
               </p>
             </div>
-            <BankStatementsStep onAnalysisChange={setIsAnalyzingStatements} />
+            <BankStatementsStep isAnalyzing={isAnalyzingStatements || isSubmitting} />
           </>
         );
       case 8:
@@ -311,7 +356,14 @@ export const QuickMatchFormSection = () => {
 
   const getButtonText = () => {
     if (step === 1) return "Get started";
-    if (step === 7) return "See my quotes";
+    if (step === 7) {
+      const method = watch("bankStatementMethod");
+      const bankAnalysis = watch("bankAnalysis");
+      if (method === "upload" && !bankAnalysis) {
+        return "Analyze Statements";
+      }
+      return "See my quotes";
+    }
     if (step === 8) return "Back to Home"; // Or hide button entirely
     return "Continue";
   };

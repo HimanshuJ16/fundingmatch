@@ -4,10 +4,10 @@ import { usePlaidLink } from "react-plaid-link";
 import { QuickMatchFormData } from "@/schemas/quickmatchform.schema";
 
 interface BankStatementsStepProps {
-  onAnalysisChange?: (isAnalyzing: boolean) => void;
+  isAnalyzing?: boolean;
 }
 
-export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps) => {
+export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: BankStatementsStepProps) => {
   const { register, setValue, watch, formState: { errors } } = useFormContext<QuickMatchFormData>();
   const [method, setMethod] = useState<"upload" | "link">("upload");
   const [files, setFiles] = useState<File[]>([]);
@@ -79,12 +79,8 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
     }
   }, [method, linkToken]);
 
-  const [uploadAnalysis, setUploadAnalysis] = useState<any>(null);
+  // Local load state for Plaid analysis (File analysis is handled by parent)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  useEffect(() => {
-    onAnalysisChange?.(isAnalyzing);
-  }, [isAnalyzing, onAnalysisChange]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -94,49 +90,19 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
       setFiles(updatedFiles);
       setValue("bankStatements", updatedFiles);
 
-      // Trigger analysis for all files
-      await analyzeFiles(updatedFiles);
+      // Reset analysis when new files are added to force re-analysis
+      setValue("bankAnalysis", null);
     }
   };
 
-  const analyzeFiles = async (filesToAnalyze: File[]) => {
-    setIsAnalyzing(true);
-    try {
-      const formData = new FormData();
-      filesToAnalyze.forEach((file) => {
-        formData.append("file", file);
-      });
-
-      const response = await fetch("/api/analyze-statement", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUploadAnalysis(data.data);
-          setValue("bankAnalysis", data.data); // Persist to form
-          console.log("Upload Analysis:", data.data);
-        }
-      }
-    } catch (error) {
-      console.error("Error analyzing files:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  // analyzeFiles function removed - moved to parent
 
   const removeFile = (index: number) => {
+    if (isParentAnalyzing) return; // Prevent removal during analysis
     const newFiles = files.filter((_, i) => i !== index);
     setFiles(newFiles);
     setValue("bankStatements", newFiles);
-
-    if (newFiles.length > 0) {
-      analyzeFiles(newFiles);
-    } else {
-      setUploadAnalysis(null);
-    }
+    setValue("bankAnalysis", null); // Reset analysis on file removal
   };
 
   const onSuccess = React.useCallback(async (public_token: string) => {
@@ -247,7 +213,8 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="p-1.5 hover:bg-[#ffffff1a] rounded-full text-[#ffffff99] hover:text-white transition-colors"
+                    disabled={isParentAnalyzing}
+                    className={`p-1.5 rounded-full transition-colors ${isParentAnalyzing ? 'opacity-50 cursor-not-allowed text-[#ffffff66]' : 'hover:bg-[#ffffff1a] text-[#ffffff99] hover:text-white'}`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -256,18 +223,10 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
                 </div>
               ))}
 
-              {/* Analysis Status for Uploads */}
-              {isAnalyzing && (
-                <div className="text-left w-full bg-[#ffffff0a] p-3 rounded-lg border border-[#ffffff1a] flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4 text-[#ffffff99]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
-                  <p className="text-xs text-[#ffffff99]">AI analyzing document...</p>
-                </div>
-              )}
+              {/* Analysis Status for Uploads - Handled by Parent Button Text mostly */}
 
-              {uploadAnalysis && (
+              {/* Display Analysis Results if available */}
+              {watch("bankAnalysis") && (
                 <div className="bg-[#ffffff05] p-3 rounded border border-[#00ff9d33]">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-2 h-2 rounded-full bg-[#00ff9d]"></div>
@@ -278,25 +237,25 @@ export const BankStatementsStep = ({ onAnalysisChange }: BankStatementsStepProps
                     <div>
                       <p className="text-[#ffffff99]">Est. Monthly Income</p>
                       <p className="text-white font-mono">
-                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.average_monthly_income)}
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: watch("bankAnalysis").currency_code || 'GBP' }).format(watch("bankAnalysis").average_monthly_income)}
                       </p>
                     </div>
                     <div>
                       <p className="text-[#ffffff99]">Est. EOD Balance</p>
                       <p className="text-white font-mono">
-                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.average_eod_balance)}
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: watch("bankAnalysis").currency_code || 'GBP' }).format(watch("bankAnalysis").average_eod_balance)}
                       </p>
                     </div>
                     <div>
                       <p className="text-[#ffffff99]">Detected Repayments</p>
                       <p className="text-white font-mono">
-                        {uploadAnalysis.detected_repayments.count} ({uploadAnalysis.detected_repayments.lenders.join(', ') || 'None'})
+                        {watch("bankAnalysis").detected_repayments.count} ({watch("bankAnalysis").detected_repayments.lenders.join(', ') || 'None'})
                       </p>
                     </div>
                     <div>
                       <p className="text-[#ffffff99]">Repayment Value</p>
                       <p className="text-white font-mono">
-                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: uploadAnalysis.currency_code || 'GBP' }).format(uploadAnalysis.detected_repayments.total_amount)}
+                        {new Intl.NumberFormat('en-GB', { style: 'currency', currency: watch("bankAnalysis").currency_code || 'GBP' }).format(watch("bankAnalysis").detected_repayments.total_amount)}
                       </p>
                     </div>
                   </div>
