@@ -140,6 +140,13 @@ export function matchLenders(data: ApplicationData): Lender[] {
       refusals.push(`Trading ${data.company.timeTradingMonths}m < 12m`);
     }
 
+    if (data.financials.averageMonthlyTurnover >= 10000) {
+      reasons.push("Turnover >= £10k");
+    } else {
+      passed = false;
+      refusals.push(`Turnover £${data.financials.averageMonthlyTurnover.toFixed(0)} < £10k`);
+    }
+
     // Open banking 12m - approximated by time trading for now or assuming available if files provided
     // Filed accounts
     // if (data.company.hasFiledAccounts) {
