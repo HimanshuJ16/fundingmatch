@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     // 2. Calculate date range (last 180 days)
     const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 180);
+    startDate.setDate(startDate.getDate() - 730);
     const startDateStr = startDate.toISOString().split("T")[0];
 
     // 3. Fetch transactions from Plaid
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       });
 
       // If we looked back 180 days
-      const daysToAnalyze = 180;
+      const daysToAnalyze = 730;
       const balancesList: number[] = [];
       let currentReconstructedBalance = runningBalance;
 
