@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quickMatchSchema, QuickMatchFormData } from "@/schemas/quickmatchform.schema";
@@ -19,6 +19,8 @@ export const QuickMatchFormSection = () => {
   const [matchResult, setMatchResult] = useState<"matched" | "no_match" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzingStatements, setIsAnalyzingStatements] = useState(false);
+  const formTopRef = useRef<HTMLDivElement>(null);
+
   const methods = useForm<QuickMatchFormData>({
     resolver: zodResolver(quickMatchSchema),
     mode: "onChange",
@@ -30,6 +32,13 @@ export const QuickMatchFormSection = () => {
 
   const { trigger, setValue, watch, formState: { errors } } = methods;
   const businessType = watch("businessType");
+
+  // Scroll to top of form when step changes
+  useEffect(() => {
+    if (step > 1 && formTopRef.current) {
+      formTopRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [step]);
 
   const analyzeFiles = async (filesToAnalyze: File[]) => {
     setIsAnalyzingStatements(true);
@@ -370,6 +379,7 @@ export const QuickMatchFormSection = () => {
 
   return (
     <div
+      ref={formTopRef}
       className="flex flex-col w-full max-w-lg lg:max-w-[600px] justify-between items-center gap-6 p-6 md:p-8 relative rounded-[32px] border-[none] bg-[linear-gradient(325deg,rgba(40,60,100,1)_60%,rgba(59,124,126,1)_100%)] before:content-[''] before:absolute before:inset-0 before:p-px before:rounded-[32px] before:[background:linear-gradient(142deg,rgba(40,60,100,1)_60%,rgba(59,124,126,1)_100%) before:[-webkit-mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] before:[-webkit-mask-composite:xor] before:mask-exclude before:z-1 before:pointer-events-none shadow-2xl"
       style={{ width: "480px" }}
     >
