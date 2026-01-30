@@ -12,7 +12,7 @@ const Navbar = () => {
 
   return (
     <header className="w-full bg-[#121e36] flex justify-center py-4 relative z-50">
-      <div className="flex w-full max-w-7xl px-4 items-center justify-between relative">
+      <div className="flex w-full max-w-7xl px-4 items-center justify-center relative">
         <a href="/" aria-label="Home" className="shrink-0">
           <img
             className="w-[120px] md:w-[137px] h-auto object-contain"
@@ -22,7 +22,7 @@ const Navbar = () => {
         </a>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:inline-flex items-center gap-12 relative flex-[0_0_auto]">
+        {/* <div className="hidden md:inline-flex items-center gap-12 relative flex-[0_0_auto]">
           <nav
             className="inline-flex items-center gap-10 relative flex-[0_0_auto]"
             aria-label="Main navigation"
@@ -47,10 +47,10 @@ const Navbar = () => {
               Get started
             </div>
           </button>
-        </div>
+        </div> */}
 
         {/* Mobile Menu Button */}
-        <button
+        {/* <button
           className="md:hidden text-white p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
@@ -86,11 +86,11 @@ const Navbar = () => {
               <line x1="4" x2="20" y1="18" y2="18" />
             </svg>
           )}
-        </button>
+        </button> */}
       </div>
 
       {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
+      {/* {isMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-[#121e36] px-4 py-6 flex flex-col gap-6 md:hidden shadow-xl border-t border-gray-800">
           <nav className="flex flex-col gap-4">
             {navigationLinks.map((link, index) => (
@@ -114,7 +114,7 @@ const Navbar = () => {
             </div>
           </button>
         </div>
-      )}
+      )} */}
     </header>
   );
 };

@@ -1,24 +1,24 @@
 export const Footer = () => {
   const socialIcons = [
-    {
-      src: "assets/twitter.png",
-      alt: "Twitter",
-      href: "#twitter",
-    },
+    // {
+    //   src: "assets/twitter.png",
+    //   alt: "Twitter",
+    //   href: "#twitter",
+    // },
     {
       src: "assets/facebook.png",
       alt: "Facebook",
-      href: "#facebook",
+      href: "https://www.facebook.com/people/fundingmatchai/61585728852514/?locale=en_GB",
     },
     {
       src: "assets/instagram.png",
       alt: "Instagram",
-      href: "#instagram",
+      href: "https://www.instagram.com/fundingmatch/",
     },
     {
       src: "assets/linkedin.png",
       alt: "LinkedIn",
-      href: "#linkedin",
+      href: "https://www.linkedin.com/company/fundingmatch-ai",
     },
   ];
 
