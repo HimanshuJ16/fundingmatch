@@ -13,6 +13,9 @@ export async function POST(req: Request) {
       },
       client_name: "Funding Match",
       products: [Products.Auth, Products.Transactions],
+      transactions: {
+        days_requested: 730,
+      },
       country_codes: [CountryCode.Gb], // Adjust based on your region (e.g., US, CA, GB)
       language: "en",
     });
