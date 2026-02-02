@@ -151,7 +151,7 @@ export async function POST(req: Request) {
 
       // If we looked back 180 days
       const daysToAnalyze = 730;
-      const balancesList: number[] = [];
+      const balancesList: { date: string; balance: number }[] = [];
       let currentReconstructedBalance = runningBalance;
 
       for (let i = 0; i < daysToAnalyze; i++) {
@@ -159,7 +159,7 @@ export async function POST(req: Request) {
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
 
-        balancesList.push(currentReconstructedBalance);
+        balancesList.push({ date: dateStr, balance: currentReconstructedBalance });
 
         // Prepare for the next day backwards (i.e. finding start of day balance for this day, which is end of day for prev day)
         if (txnsByDate[dateStr]) {
@@ -170,7 +170,7 @@ export async function POST(req: Request) {
       }
 
       const averageEODBalance = balancesList.length > 0
-        ? balancesList.reduce((a, b) => a + b, 0) / balancesList.length
+        ? balancesList.reduce((a, b) => a + b.balance, 0) / balancesList.length
         : 0;
 
       // --- 4. Card Turnover & Providers ---
@@ -208,8 +208,18 @@ export async function POST(req: Request) {
       })));
 
       // --- 5. Balance Checks ---
-      const lowBalanceDays = balancesList.filter(b => b < 300).length;
-      const negativeBalanceDays = balancesList.filter(b => b < 0).length;
+      const lowBalanceDays = balancesList.filter(b => b.balance < 300).length;
+      const negativeBalanceDays = balancesList.filter(b => b.balance < 0).length;
+
+      // Calculate Max Monthly Low Balance Occurrence
+      const lowBalanceByMonth: { [key: string]: number } = {};
+      balancesList.forEach(entry => {
+        if (entry.balance < 300) {
+          const monthYear = entry.date.substring(0, 7); // "YYYY-MM"
+          lowBalanceByMonth[monthYear] = (lowBalanceByMonth[monthYear] || 0) + 1;
+        }
+      });
+      const maxMonthlyLowBalanceOccurrence = Object.values(lowBalanceByMonth).reduce((max, val) => Math.max(max, val), 0);
 
       return {
         account_id: account.account_id,
@@ -245,6 +255,7 @@ export async function POST(req: Request) {
           average_monthly_card_turnover: averageMonthlyCardTurnover,
           average_eod_balance: averageEODBalance,
           low_balance_days_count: lowBalanceDays,
+          max_monthly_low_balance_occurrence: maxMonthlyLowBalanceOccurrence,
           negative_balance_days_count: negativeBalanceDays,
           inflows,
           outflows,
@@ -263,6 +274,7 @@ export async function POST(req: Request) {
         lenders: [] as string[]
       },
       low_balance_days_count: 0,
+      max_monthly_low_balance_occurrence: 0,
       negative_balance_days_count: 0,
       average_monthly_card_turnover: 0,
       detected_card_providers: [] as string[],
@@ -274,6 +286,7 @@ export async function POST(req: Request) {
     let totalRepaymentCount = 0;
     let totalRepaymentAmount = 0;
     let totalLowBalanceDays = 0;
+    let maxMonthlyLowBalance = 0;
     let totalNegativeBalanceDays = 0;
     let totalCardTurnoverSum = 0;
     const allLenders = new Set<string>();
@@ -283,12 +296,12 @@ export async function POST(req: Request) {
       totalIncomeSum += (res.analysis.average_monthly_income || 0);
       totalEodSum += (res.analysis.average_eod_balance || 0);
       totalLowBalanceDays += (res.analysis.low_balance_days_count || 0);
+      maxMonthlyLowBalance = Math.max(maxMonthlyLowBalance, res.analysis.max_monthly_low_balance_occurrence || 0);
       totalNegativeBalanceDays += (res.analysis.negative_balance_days_count || 0);
       totalCardTurnoverSum += (res.analysis.average_monthly_card_turnover || 0);
 
       const repayments = res.analysis.detected_repayments;
       totalRepaymentCount += (repayments.count || 0);
-      totalRepaymentAmount += (repayments.total_amount || 0);
 
       if (Array.isArray(repayments.lenders)) {
         repayments.lenders.forEach((l: string) => allLenders.add(l));
@@ -302,26 +315,7 @@ export async function POST(req: Request) {
     const count = accountAnalysis.length || 1;
 
     // Averages/Sums
-    aggregatedData.average_monthly_income = totalIncomeSum; // Sum of incomes across accounts is usually correct for total business income? Or average? 
-    // Let's stick to SUM for income (if multiple accounts)
-    // Actually, analyze-statement logic aggregated by averaging file results. 
-    // If files are "Month 1, Month 2" -> Average makes sense.
-    // If files are "Account A, Account B" -> Sum makes sense.
-    // Plaid returns Accounts. So SUM is likely better for Income.
-    // But let's look at `average_eod_balance`. Sum of balances = Total Liquidity.
-    // Let's use SUM for Income, and SUM for EOD Balance (Total Cash)? 
-    // Wait, match-lenders expects "Average Monthly Turnover". That is definitely SUM of all accounts' turnover.
-    // "Average EOD Balance" -> Total Cash Position -> Sum of all accounts.
-
-    // Correction: analyze-statement averaged them. 
-    // "totalIncomeSum / count".
-    // I will stick to what analyze-statement did to ensure consistency with existing rules.
-    // (Even if Sum might be more logical for multi-account, the rules might be calibrated for 'per account' or 'average view').
-    // Actually, let's use Sum for Income/Turnover, Average for Balance?
-    // No, analyze-statement used: aggregatedData.average_monthly_income = totalIncomeSum / count;
-    // I will replicate that EXACTLY to avoid breaking rules.
-
-    aggregatedData.average_monthly_income = totalIncomeSum / count;
+    aggregatedData.average_monthly_income = totalIncomeSum / count; // Matched with analyze-statement logic
     aggregatedData.average_eod_balance = totalEodSum / count;
     aggregatedData.average_monthly_card_turnover = totalCardTurnoverSum / count;
 
@@ -330,6 +324,7 @@ export async function POST(req: Request) {
     aggregatedData.detected_repayments.lenders = Array.from(allLenders);
 
     aggregatedData.low_balance_days_count = totalLowBalanceDays;
+    aggregatedData.max_monthly_low_balance_occurrence = maxMonthlyLowBalance;
     aggregatedData.negative_balance_days_count = totalNegativeBalanceDays;
     aggregatedData.detected_card_providers = Array.from(allCardProviders);
 

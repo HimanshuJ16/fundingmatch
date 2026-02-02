@@ -25,6 +25,7 @@ export interface ApplicationData {
     averageMonthlyCardTurnover: number;
     averageEodBalance: number;
     lowBalanceDays: number; // monthly average or total
+    maxMonthlyLowBalanceDays?: number; // Maximum count in any single month
     negativeBalanceDays: number;
     existingLenderCount: number;
     detectedCardProviders: string[];
@@ -108,12 +109,17 @@ export function matchLenders(data: ApplicationData): Lender[] {
       refusals.push("No existing active loan found");
     }
 
-    // Cashflow: Low balance days <= 5
-    if (data.financials.lowBalanceDays <= 5) {
-      reasons.push(`Low balance days (${data.financials.lowBalanceDays}) <= 5`);
+    // Cashflow: Low balance days <= 5 in any month
+    // We now use maxMonthlyLowBalanceDays if available (from new analysis), else fallback to lowBalanceDays (total)
+    const lowBalMetric = data.financials.maxMonthlyLowBalanceDays !== undefined
+      ? data.financials.maxMonthlyLowBalanceDays
+      : data.financials.lowBalanceDays;
+
+    if (lowBalMetric <= 5) {
+      reasons.push(`Low balance days (Max Monthly: ${lowBalMetric}) <= 5`);
     } else {
       passed = false;
-      refusals.push(`Low balance days (${data.financials.lowBalanceDays}) > 5`);
+      refusals.push(`Low balance days (Max Monthly: ${lowBalMetric}) > 5`);
     }
 
     // IVA

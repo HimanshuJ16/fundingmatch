@@ -61,7 +61,9 @@ OUTPUT FORMAT (JSON ONLY)
     "total_amount": number,
     "lenders": string[]
   },
-  "low_balance_days_count": number, // Count of days where EOD balance < 300
+  "low_balance_days_count": number, // Total count of days where EOD balance < 300 across the entire period
+  "max_monthly_low_balance_occurrence": number, // The highest count of low balance days in ANY SINGLE month
+  "analyzed_months_count": number, // Number of months covered by this statement
   "negative_balance_days_count": number, // Count of days where EOD balance < 0
   "average_monthly_card_turnover": number, // Revenue specifically from card processors (POS)
   "detected_card_providers": string[], // List of detected card processor names
@@ -85,7 +87,7 @@ CALCULATION LOGIC (STRICT)
   - Calculate Total_Days = (Last Date - First Date) + 1.
   - If "Total_Days" <= 45: Treat as **1 Month** (Divisor = 1).
   - If "Total_Days" > 45: Calculate "Months = Total_Days / 30.44".
-  - Use this calculated "Months" value for all "Average Monthly" calculations.
+  - Use this calculated "Months" value for "analyzed_months_count" and "Average Monthly" calculations.
 
 2. AVERAGE MONTHLY INCOME:
 - Identify all CREDIT / INFLOW transactions.
@@ -103,6 +105,7 @@ CALCULATION LOGIC (STRICT)
 - **Metrics:**
   - "average_eod_balance": Arithmetic mean of all daily closing balances.
   - "low_balance_days_count": Count of days where Balance < 300.
+  - "max_monthly_low_balance_occurrence": Group days by month. Count low balance days per month. Return the MAXIMUM count found in any single month.
   - "negative_balance_days_count": Count of days where Balance < 0.
 - If no running balance column exists, return 0 for counts.
 
@@ -226,7 +229,8 @@ Return ONLY the JSON object.
       negative_balance_days_count: 0,
       average_monthly_card_turnover: 0,
       detected_card_providers: [] as string[],
-      currency_code: validResults[0].currency_code || "GBP"
+      currency_code: validResults[0].currency_code || "GBP",
+      max_monthly_low_balance_occurrence: 0,
     };
 
     let totalIncomeSum = 0;
@@ -234,6 +238,7 @@ Return ONLY the JSON object.
     let totalRepaymentCount = 0;
     let totalRepaymentAmount = 0;
     let totalLowBalanceDays = 0;
+    let maxMonthlyLowBalance = 0;
     let totalNegativeBalanceDays = 0;
     let totalCardTurnoverSum = 0;
     const allLenders = new Map<string, string>(); // normalized -> display
@@ -243,6 +248,7 @@ Return ONLY the JSON object.
       totalIncomeSum += (res.average_monthly_income || 0);
       totalEodSum += (res.average_eod_balance || 0);
       totalLowBalanceDays += (res.low_balance_days_count || 0);
+      maxMonthlyLowBalance = Math.max(maxMonthlyLowBalance, res.max_monthly_low_balance_occurrence || 0);
       totalNegativeBalanceDays += (res.negative_balance_days_count || 0);
       totalCardTurnoverSum += (res.average_monthly_card_turnover || 0);
 
@@ -279,6 +285,7 @@ Return ONLY the JSON object.
     aggregatedData.detected_repayments.lenders = Array.from(allLenders.values());
 
     aggregatedData.low_balance_days_count = totalLowBalanceDays;
+    aggregatedData.max_monthly_low_balance_occurrence = maxMonthlyLowBalance;
     aggregatedData.negative_balance_days_count = totalNegativeBalanceDays;
     aggregatedData.detected_card_providers = Array.from(allCardProviders.values());
 

@@ -58,6 +58,7 @@ export async function POST(req: Request) {
         averageMonthlyCardTurnover: bankAnalysis.average_monthly_card_turnover || 0,
         averageEodBalance: bankAnalysis.average_eod_balance || 0,
         lowBalanceDays: bankAnalysis.low_balance_days_count || 0,
+        maxMonthlyLowBalanceDays: bankAnalysis.max_monthly_low_balance_occurrence || 0,
         negativeBalanceDays: bankAnalysis.negative_balance_days_count || 0,
         existingLenderCount: bankAnalysis.detected_repayments?.lenders?.length || 0,
         detectedCardProviders: bankAnalysis.detected_card_providers || [],

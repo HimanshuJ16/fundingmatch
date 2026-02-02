@@ -378,7 +378,7 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
                     ))}
 
                     <p className="text-[10px] text-[#ffffff66] italic">
-                      Based on last 6 months of transaction history.
+                      Based on last 12 months of transaction history.
                     </p>
                   </div>
                 ) : (
