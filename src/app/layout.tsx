@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://fundingmatch.ai"),
   title: "FundingMatchAI",
   description: "Grow your business with smart funding",
   openGraph: {
