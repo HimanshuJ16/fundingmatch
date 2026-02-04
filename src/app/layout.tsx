@@ -17,6 +17,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FundingMatchAI",
   description: "Grow your business with smart funding",
+  openGraph: {
+    title: "FundingMatchAI",
+    description: "Grow your business with smart funding",
+    images: [
+      {
+        url: "/assets/preview.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "FundingMatchAI Preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FundingMatchAI",
+    description: "Grow your business with smart funding",
+    images: ["/assets/preview.jpeg"],
+  },
 };
 
 export default function RootLayout({
