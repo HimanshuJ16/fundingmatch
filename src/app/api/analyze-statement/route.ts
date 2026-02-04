@@ -53,7 +53,7 @@ Your task is to parse it and return a SINGLE, VALID JSON OBJECT that follows the
 OUTPUT FORMAT (JSON ONLY)
 ━━━━━━━━━━━━━━━━━━━━
 {
-  "_thought_process": "Brief explanation of how values were derived (e.g., 'Detected 33 days of data, treated as 1.1 months. Detected 'D' suffix on balances indicating overdraft.')",
+  "_thought_process": "Brief explanation of how values were derived (e.g., 'Detected 33 days of data, treated as 1.1 months. Excluded 'Transfer from Savings' from income. Identified 'Dojo' credits as Card Turnover.'). List top 3 income sources identified.",
   "average_monthly_income": number,
   "average_eod_balance": number,
   "detected_repayments": {
@@ -91,10 +91,18 @@ CALCULATION LOGIC (STRICT)
 
 2. AVERAGE MONTHLY INCOME:
 - Identify all CREDIT / INFLOW transactions.
-- **Exclusions (Must Remove):**
-  - Internal transfers (e.g., Sender Name matches Account Name, "Transfer to Self").
-  - Refund reversals.
-  - Loan payouts (large round sums from identified lenders).
+- **INCLUSIONS (Sources of Revenue):**
+  - **Card Turnover:** Credits from Dojo, Worldpay, Barclaycard, SumUp, Stripe, etc. are **ALWAYS INCOME**. Do NOT exclude them even if they appear in the "Lenders" list below.
+  - **General Sales:** Credits from customers, invoices, etc.
+- **CRITICAL EXCLUSIONS (MUST REMOVE):**
+  - **Opening Balances:** "Opening Balance", "Brought Forward", "B/F", "Balance Start", "Start Balance". (These are NOT income).
+  - **Internal Transfers:** Transfers from own accounts. Look for "Transfer from Savings", "TFR", "Sweep", "From Account", "Internal Transfer", or if Sender Name matches Account Name.
+  - **Refunds:** Checks, reversals, or "Refund".
+  - **Loan/Capital Payouts:** Large round sums from identified lenders. **SPECIFICALLY EXCLUDE CREDITS FROM:**
+    - "Iwoca", "Funding Circle", "YouLend", "Libis", "Fleximize"
+    - "Capify", "Capital On Tap", "Advantis", "UK SME Cap", "Admiral Taverns"
+    - "NatWest Business Loan", "NWB", "Bounce Back Loan", "CBILS"
+  - **Government Grants:** "Bounce Back Loan", "Coronavirus Job Retention".
 - **Calculation:** (Sum of valid inflows) ÷ (Calculated Months).
 
 3. END-OF-DAY (EOD) BALANCE & HEALTH:
@@ -117,8 +125,8 @@ CALCULATION LOGIC (STRICT)
   "loan", "repayment", "instalment", "installment", "instlmnt", "emi", "credit", "finance", "financing", "lending", "capital", "advance", "agreement", "settlement", "debt", "borrow"
 
   **B. Match against these specific Lenders:**
-  - *Business/Fintech:* "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance", "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon"
-  - *Bank Loans:* "metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan", "natwest business loan", "santander business loan", "barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan"
+  - *Business/Fintech:* "iwoca", "funding circle", "youlend", "libis", "fleximize", "esme loans", "marketfinance", "thincats", "capify", "worldpay advance", "tide cashflow", "nucleus commercial finance", "boost capital", "just cashflow", "365 finance", "lombard", "bibby", "white oak", "ultimate finance", "shawbrook", "allica", "close brothers", "paragon", "uk sme cap", "advantis"
+  - *Bank Loans:* "metro bank business loan", "hsbc business loan", "barclays business loan", "lloyds business loan", "natwest business loan", "nwb business loan", "santander business loan", "barclays loan", "hsbc loan", "lloyds loan", "natwest loan", "santander loan", "metro bank loan", "tsb loan"
   - *Consumer/High Cost:* "zopa", "ratesetter", "rate setter", "amigo", "koyo", "118 118 money", "oakbrook", "drafty", "lending stream", "sunny", "satsuma", "peachy", "everyday loans", "quickquid", "wonga", "onga", "cashfloat", "myjar", "safety net credit"
   - *Cards/Retail Finance:* "novuna", "creation finance", "mbna", "tesco bank loan", "virgin money loan", "halifax loan", "klarna", "clearpay", "laybuy", "paypal credit", "paypal pay in 3", "monzo flex", "barclaycard", "capital one", "aqua card", "vanquis", "newday", "marbles", "fluid card"
   - *Vehicle:* "black horse", "hitachi capital", "close motor", "alphera", "lex autolease", "arval", "vw finance", "bmw finance", "mercedes finance"
