@@ -81,6 +81,8 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
 
   // Local load state for Plaid analysis (File analysis is handled by parent)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Local load state for Plaid Link modal opening/active
+  const [isPlaidLoading, setIsPlaidLoading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -140,7 +142,17 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess,
+    onExit: () => {
+      setIsPlaidLoading(false);
+    },
   });
+
+  const handleConnectClick = () => {
+    if (ready) {
+      setIsPlaidLoading(true);
+      open();
+    }
+  };
 
   const handleDisconnect = () => {
     setIsLinked(false);
@@ -285,8 +297,8 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
 
               <button
                 type="button"
-                onClick={() => open()}
-                disabled={!ready}
+                onClick={handleConnectClick}
+                disabled={!ready || isPlaidLoading}
                 className="flex items-center justify-center gap-2 px-6 py-3 w-full bg-[#121e36] text-white rounded-xl hover:bg-[#1a2b4d] transition-colors border border-[#ffffff33] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {!linkToken ? (
@@ -299,7 +311,7 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
                   </>
                 ) : (
                   <span className="font-['Roobert-SemiBold',Helvetica]">
-                    {ready ? "Connect Bank Account" : "Loading..."}
+                    {isPlaidLoading ? "Connecting..." : (ready ? "Connect Bank Account" : "Loading...")}
                   </span>
                 )}
               </button>
