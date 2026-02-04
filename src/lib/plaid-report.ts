@@ -6,7 +6,7 @@ export async function generatePlaidReport(
   accessToken: string,
   companyName?: string,
   companyNumber?: string
-): Promise<Buffer> {
+): Promise<{ filename: string; buffer: Buffer }[]> {
   // 1. Fetch Data from Plaid
   const balancesPromise = plaidClient.accountsBalanceGet({
     access_token: accessToken,
@@ -15,142 +15,145 @@ export async function generatePlaidReport(
   const now = new Date();
   const twoYearsAgo = new Date();
   twoYearsAgo.setFullYear(now.getFullYear() - 2);
+  const startDate = twoYearsAgo.toISOString().split("T")[0];
+  const endDate = now.toISOString().split("T")[0];
+  const count = 500;
+  let offset = 0;
 
-  const transactionsPromise = plaidClient.transactionsGet({
-    access_token: accessToken,
-    start_date: twoYearsAgo.toISOString().split("T")[0],
-    end_date: now.toISOString().split("T")[0],
-    options: {
-      count: 500,
-      offset: 0,
-    },
-  });
+  let allTransactions: any[] = [];
+  let hasMore = true;
 
-  const [balanceRes, initialTransRes] = await Promise.all([
-    balancesPromise,
-    transactionsPromise,
-  ]);
-
-  const accounts = balanceRes.data.accounts;
-  let allTransactions = [...initialTransRes.data.transactions];
-  const totalTransactions = initialTransRes.data.total_transactions;
-
-  // Fetch remaining transactions if any
-  while (allTransactions.length < totalTransactions) {
+  // Fetch transactions in batches
+  while (hasMore) {
     const res = await plaidClient.transactionsGet({
       access_token: accessToken,
-      start_date: twoYearsAgo.toISOString().split("T")[0],
-      end_date: now.toISOString().split("T")[0],
+      start_date: startDate,
+      end_date: endDate,
       options: {
-        count: 500, // Max per request (batch size)
-        offset: allTransactions.length,
+        count: count,
+        offset: offset,
       },
     });
-    allTransactions = [...allTransactions, ...res.data.transactions];
+
+    const transactions = res.data.transactions;
+    allTransactions = [...allTransactions, ...transactions];
+
+    if (transactions.length < count) {
+      hasMore = false;
+    } else {
+      offset += count;
+    }
   }
 
-  // 2. Generate PDF
-  const doc = new jsPDF();
-  const primaryColor: [number, number, number] = [24, 39, 68]; // #182744
-  const secondaryColor: [number, number, number] = [100, 116, 139]; // #64748b
-  const accentColor: [number, number, number] = [241, 245, 249]; // #f1f5f9
-  const tableHeaderColor: [number, number, number] = [24, 39, 68];
+  const [balanceRes] = await Promise.all([balancesPromise]);
+  const accounts = balanceRes.data.accounts;
 
-  // Helper for Header
-  const addHeader = () => {
-    // Header Background
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 40, "F"); // Full width header bar
+  // 2. Generate PDFs (One per account)
+  const reports: { filename: string; buffer: Buffer }[] = [];
 
-    // Title
-    doc.setFontSize(22);
+  for (const account of accounts) {
+    const doc = new jsPDF();
+    const primaryColor: [number, number, number] = [24, 39, 68]; // #182744
+    const secondaryColor: [number, number, number] = [100, 116, 139]; // #64748b
+    const accentColor: [number, number, number] = [241, 245, 249]; // #f1f5f9
+    const tableHeaderColor: [number, number, number] = [24, 39, 68];
+
+    // Helper for Header
+    const addHeader = () => {
+      // Header Background
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, 210, 40, "F"); // Full width header bar
+
+      // Title
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Open Banking Report", 14, 25);
+
+      // Subtitle / Date in header
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(200, 200, 200);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 196, 25, { align: "right" });
+    };
+
+    addHeader();
+
+    let currentY = 55;
+
+    // Metadata Section
+    doc.setFontSize(12);
+    doc.setTextColor(...primaryColor);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("Open Banking Report", 14, 25);
+    doc.text("Company Details", 14, currentY);
 
-    // Subtitle / Date in header
+    doc.setDrawColor(226, 232, 240); // divider line
+    doc.line(14, currentY + 3, 196, currentY + 3);
+
+    currentY += 12;
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 200, 200);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 196, 25, { align: "right" });
-  };
 
-  addHeader();
+    // Row 1
+    doc.setTextColor(...secondaryColor);
+    doc.text("Company Name:", 14, currentY);
+    doc.setTextColor(0, 0, 0);
+    doc.text(companyName || "N/A", 50, currentY);
 
-  let currentY = 55;
+    doc.setTextColor(...secondaryColor);
+    doc.text("Registration No:", 110, currentY);
+    doc.setTextColor(0, 0, 0);
+    doc.text(companyNumber || "N/A", 145, currentY);
 
-  // Metadata Section
-  doc.setFontSize(12);
-  doc.setTextColor(...primaryColor);
-  doc.setFont("helvetica", "bold");
-  doc.text("Company Details", 14, currentY);
+    currentY += 15;
 
-  doc.setDrawColor(226, 232, 240); // divider line
-  doc.line(14, currentY + 3, 196, currentY + 3);
+    // Account Details Section (Specific to this account)
+    doc.setFontSize(12);
+    doc.setTextColor(...primaryColor);
+    doc.setFont("helvetica", "bold");
+    doc.text("Account Details", 14, currentY);
+    currentY += 5;
 
-  currentY += 12;
+    const accountRow = [
+      account.name,
+      account.mask || "****",
+      account.type + (account.subtype ? ` (${account.subtype})` : ""),
+      account.balances.current?.toFixed(2) + ` ${account.balances.iso_currency_code}`,
+      account.balances.available?.toFixed(2) + ` ${account.balances.iso_currency_code}`,
+    ];
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Account Name", "Mask", "Type", "Current", "Available"]],
+      body: [accountRow],
+      theme: "grid",
+      headStyles: {
+        fillColor: tableHeaderColor,
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      bodyStyles: {
+        textColor: [51, 65, 85],
+        fontSize: 10
+      },
+      alternateRowStyles: {
+        fillColor: accentColor
+      },
+      columnStyles: {
+        3: { halign: 'right' }, // Current
+        4: { halign: 'right' }  // Available
+      }
+    });
 
-  // Row 1
-  doc.setTextColor(...secondaryColor);
-  doc.text("Company Name:", 14, currentY);
-  doc.setTextColor(0, 0, 0);
-  doc.text(companyName || "N/A", 50, currentY);
+    // @ts-ignore
+    currentY = doc.lastAutoTable.finalY + 20;
 
-  doc.setTextColor(...secondaryColor);
-  doc.text("Registration No:", 110, currentY);
-  doc.setTextColor(0, 0, 0);
-  doc.text(companyNumber || "N/A", 145, currentY);
+    // 3. Transactions For This Account
 
-  currentY += 15;
-
-  // Accounts Section
-  doc.setFontSize(12);
-  doc.setTextColor(...primaryColor);
-  doc.setFont("helvetica", "bold");
-  doc.text("Account Balances", 14, currentY);
-  currentY += 5;
-
-  const accountRows = accounts.map((acc) => [
-    acc.name,
-    acc.mask || "****",
-    acc.type + (acc.subtype ? ` (${acc.subtype})` : ""),
-    acc.balances.current?.toFixed(2) + ` ${acc.balances.iso_currency_code}`,
-    acc.balances.available?.toFixed(2) + ` ${acc.balances.iso_currency_code}`,
-  ]);
-
-  autoTable(doc, {
-    startY: currentY,
-    head: [["Account Name", "Mask", "Type", "Current", "Available"]],
-    body: accountRows,
-    theme: "grid",
-    headStyles: {
-      fillColor: tableHeaderColor,
-      textColor: 255,
-      fontStyle: 'bold',
-      halign: 'left'
-    },
-    bodyStyles: {
-      textColor: [51, 65, 85],
-      fontSize: 10
-    },
-    alternateRowStyles: {
-      fillColor: accentColor
-    },
-    columnStyles: {
-      3: { halign: 'right' }, // Current
-      4: { halign: 'right' }  // Available
-    }
-  });
-
-  // @ts-ignore
-  currentY = doc.lastAutoTable.finalY + 20;
-
-  // 3. Transactions Per Account
-  for (const account of accounts) {
-    // Check if we need a new page
+    // Check if we need a new page before transactions title? 
+    // Usually not needed right after account details, but good to check space.
     if (currentY > 250) {
       doc.addPage();
       addHeader();
@@ -160,26 +163,18 @@ export async function generatePlaidReport(
     doc.setFontSize(14);
     doc.setTextColor(...primaryColor);
     doc.setFont("helvetica", "bold");
-    doc.text(`${account.name} (****${account.mask})`, 14, currentY);
+    doc.text(`Transactions Analysis`, 14, currentY);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...secondaryColor);
-    doc.text(`Current Balance: ${account.balances.current?.toFixed(2)} ${account.balances.iso_currency_code}`, 14, currentY + 6);
-
-    currentY += 12;
+    currentY += 10;
 
     // Filter and Sort Transactions: Oldest First (Ascending)
     const accountTxns = allTransactions
       .filter((t) => t.account_id === account.account_id)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Calculate Start Balance (Balance before the first loaded transaction)
-    // Start = CurrentBalance + Sum(All Transaction Amounts)
-    // Rationale: Plaid amounts: +ve = Debit (Out), -ve = Credit (In).
-    // To go backwards from End to Start, we ADD the amounts.
+    // Calculate Start Balance
     const totalChange = accountTxns.reduce((sum, t) => sum + t.amount, 0);
-    const startBalance = (account.balances.current || 0) + totalChange;
+    const startBalance = (account.balances.current || 0) + totalChange; // "current" is what Plaid returns as NOW balance
     let runningBalance = startBalance;
 
     const transactionRows = [];
@@ -200,7 +195,6 @@ export async function generatePlaidReport(
 
     accountTxns.forEach((t, index) => {
       // Apply transaction to balance
-      // Debit (+): Balance decreases. Credit (-): Balance increases.
       runningBalance -= t.amount;
 
       const isCredit = t.amount < 0;
@@ -276,32 +270,42 @@ export async function generatePlaidReport(
         4: { halign: 'right', fontStyle: 'bold', textColor: [100, 116, 139] }  // Balance
       },
       // Handle page breaks specifically
-      margin: { top: 45 }
+      margin: { top: 45 },
+      didDrawPage: (data) => {
+        // Re-add header on new pages (if autoTable triggers page break)
+        if (data.pageNumber > 1) {
+          addHeader();
+        }
+      }
     });
 
-    // @ts-ignore
-    currentY = doc.lastAutoTable.finalY + 20;
+    // Add Footer / Page Numbers
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.width - 20,
+        doc.internal.pageSize.height - 10,
+        { align: "right" }
+      );
+      doc.text(
+        "Funding Match AI - Confidential",
+        14,
+        doc.internal.pageSize.height - 10
+      );
+    }
+
+    const safeAccountName = account.name.replace(/[^a-zA-Z0-9]/g, "_");
+    const filename = `OpenBanking_${safeAccountName}_${account.mask}.pdf`;
+
+    reports.push({
+      filename,
+      buffer: Buffer.from(doc.output("arraybuffer"))
+    });
   }
 
-  // Add Footer / Page Numbers
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(
-      `Page ${i} of ${pageCount}`,
-      doc.internal.pageSize.width - 20,
-      doc.internal.pageSize.height - 10,
-      { align: "right" }
-    );
-    doc.text(
-      "Funding Match AI - Confidential",
-      14,
-      doc.internal.pageSize.height - 10
-    );
-  }
-
-  // Return formatted as Buffer
-  return Buffer.from(doc.output("arraybuffer"));
+  return reports;
 }

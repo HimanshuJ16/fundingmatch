@@ -163,19 +163,22 @@ export async function POST(req: Request) {
           });
 
           if (connection && connection.accessToken) {
-            console.log("Generating Plaid Report...");
+            console.log("Generating Plaid Reports...");
             const companyRegNumber = formData.companyRegistrationNumber || experianData.company?.summary?.registrationNumber;
-            const reportBuffer = await generatePlaidReport(
+            const reports = await generatePlaidReport(
               connection.accessToken,
               determinedCompanyName,
               companyRegNumber
             );
-            emailAttachments.push({
-              filename: "OpenBankingReport.pdf",
-              content: reportBuffer,
-              contentType: "application/pdf"
+
+            reports.forEach(report => {
+              emailAttachments.push({
+                filename: report.filename,
+                content: report.buffer,
+                contentType: "application/pdf"
+              });
             });
-            console.log("Plaid Report attached.");
+            console.log(`Attached ${reports.length} Plaid Reports.`);
           }
         } catch (plaidErr) {
           console.error("Failed to generate Plaid report:", plaidErr);
