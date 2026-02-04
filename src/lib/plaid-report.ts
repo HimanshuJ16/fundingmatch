@@ -23,25 +23,52 @@ export async function generatePlaidReport(
   let allTransactions: any[] = [];
   let hasMore = true;
 
+  let retries = 0;
+  const MAX_RETRIES = 5;
+
   // Fetch transactions in batches
   while (hasMore) {
-    const res = await plaidClient.transactionsGet({
-      access_token: accessToken,
-      start_date: startDate,
-      end_date: endDate,
-      options: {
-        count: count,
-        offset: offset,
-      },
-    });
+    try {
+      const res = await plaidClient.transactionsGet({
+        access_token: accessToken,
+        start_date: startDate,
+        end_date: endDate,
+        options: {
+          count: count,
+          offset: offset,
+        },
+      });
 
-    const transactions = res.data.transactions;
-    allTransactions = [...allTransactions, ...transactions];
+      // Reset retries on success
+      retries = 0;
 
-    if (transactions.length < count) {
-      hasMore = false;
-    } else {
-      offset += count;
+      const transactions = res.data.transactions;
+      allTransactions = [...allTransactions, ...transactions];
+
+      if (transactions.length < count) {
+        hasMore = false;
+      } else {
+        offset += count;
+      }
+    } catch (error: any) {
+      const errorCode = error.response?.data?.error_code;
+      console.warn(`Error fetching Plaid transactions (offset ${offset}):`, errorCode || error.message);
+
+      if (errorCode === "PRODUCT_NOT_READY") {
+        retries++;
+        if (retries > MAX_RETRIES) {
+          console.error(`PRODUCT_NOT_READY: Max retries (${MAX_RETRIES}) reached. Stopping fetch with partial data.`);
+          hasMore = false;
+        } else {
+          console.log(`PRODUCT_NOT_READY: Waiting 3 seconds before retrying (Attempt ${retries}/${MAX_RETRIES})...`);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          // Loop continues, retrying the same offset
+        }
+      } else {
+        // For other errors (e.g. distinct item error), we break to return what we have so far
+        console.error("Non-retriable Plaid error, stopping fetch:", error);
+        hasMore = false;
+      }
     }
   }
 
