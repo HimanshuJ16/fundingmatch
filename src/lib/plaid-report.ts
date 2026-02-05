@@ -17,17 +17,18 @@ export async function generatePlaidReport(
   twoYearsAgo.setFullYear(now.getFullYear() - 2);
   const startDate = twoYearsAgo.toISOString().split("T")[0];
   const endDate = now.toISOString().split("T")[0];
-  const count = 500;
+  const count = 100; // Reduced from 500 to improve reliability
   let offset = 0;
 
   let allTransactions: any[] = [];
   let hasMore = true;
 
   let retries = 0;
-  const MAX_RETRIES = 5;
+  const MAX_RETRIES = 10; // Increased to ~30s total wait to allow Production sync
 
   // Fetch transactions in batches
   while (hasMore) {
+    console.log(`fetching Plaid transactions: offset=${offset}, count=${count}, start=${startDate}, end=${endDate}`);
     try {
       const res = await plaidClient.transactionsGet({
         access_token: accessToken,
@@ -43,16 +44,21 @@ export async function generatePlaidReport(
       retries = 0;
 
       const transactions = res.data.transactions;
+      const totalAvailable = res.data.total_transactions;
+      console.log(`fetched ${transactions.length} transactions. Total available according to Plaid: ${totalAvailable}`);
+
       allTransactions = [...allTransactions, ...transactions];
 
       if (transactions.length < count) {
+        console.log("Reached end of transactions (returned < count). Stopping.");
         hasMore = false;
       } else {
         offset += count;
       }
     } catch (error: any) {
       const errorCode = error.response?.data?.error_code;
-      console.warn(`Error fetching Plaid transactions (offset ${offset}):`, errorCode || error.message);
+      const errorMessage = error.message;
+      console.warn(`Error fetching Plaid transactions (offset ${offset}): code=${errorCode}, msg=${errorMessage}`);
 
       if (errorCode === "PRODUCT_NOT_READY") {
         retries++;
@@ -65,7 +71,8 @@ export async function generatePlaidReport(
           // Loop continues, retrying the same offset
         }
       } else {
-        // For other errors (e.g. distinct item error), we break to return what we have so far
+        // For other errors, we might want to retry if it's a network glitch?
+        // But for now, let's stop to avoid infinite loops on hard errors.
         console.error("Non-retriable Plaid error, stopping fetch:", error);
         hasMore = false;
       }
