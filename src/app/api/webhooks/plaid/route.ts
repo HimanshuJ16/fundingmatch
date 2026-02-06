@@ -91,7 +91,13 @@ export async function POST(req: Request) {
       // Re-hydrate ApplicationData for template
       // (Simplified mapping - retrieving from DB JSON)
       const bankAnalysis = application.bankStatementAnalysis as any || {};
-      const matchedLenders = application.matchedLenders as any || [];
+      // const matchedLenders = application.matchedLenders as any || []; // DB only has positives. We need full results.
+      const experianCompanyData = application.experianCompanyData as any || {};
+
+      // Director Data
+      const director = application.directors[0];
+      const experianDirectorData = director?.experianData as any || {};
+
       const formData = {
         // Re-map db fields to form-like structure for template
         businessType: application.businessType,
@@ -102,54 +108,61 @@ export async function POST(req: Request) {
         mobileNumber: application.mobileNumber,
         fundingAmount: application.fundingAmount?.toString(),
         consentCreditCheck: application.creditCheckConsent,
-        tradingName: application.companyName, // Fallback if sole trader stores here
+        tradingName: application.companyName, // Fallback
 
         firstName: "",
         lastName: "",
         residentialAddress: "",
         homeOwnerStatus: false,
         directorDateOfBirth: "",
+        directorName: ""
       };
 
-      // We might need to fetch Directors to get names
-      // We already included them in the query above
-      const director = application.directors[0];
       if (director) {
         formData.firstName = director.firstName;
         formData.lastName = director.lastName;
         formData.residentialAddress = director.residentialAddress;
         formData.homeOwnerStatus = director.homeowner;
         formData.directorDateOfBirth = director.dob ? new Date(director.dob).toISOString() : "";
+        formData.directorName = `${director.firstName} ${director.lastName}`;
       }
 
-      // ... Re-construct `applicationData` object for the template ...
+      // Re-construct `applicationData` object for the template to match match-lenders logic
       const applicationData: ApplicationData = {
         company: {
           type: application.businessType as any,
           timeTradingMonths: parseInt(application.timeTrading || "0"),
-          hasFiledAccounts: false, // fallback
-          insolvencyEvents: false,
+          hasFiledAccounts: experianCompanyData.companyStatus === "Active",
+          insolvencyEvents: (experianCompanyData.legalNotices?.count > 0 || experianCompanyData.insolvency?.count > 0),
           iva: false
         },
-        credit: { experianScore: 0, experianDelphiScore: 0 }, // fallbacks if not in DB root
+        credit: {
+          experianScore: experianDirectorData.personalCreditScore || 0,
+          experianDelphiScore: experianCompanyData.commercialDelphiScore || 0,
+          experianBand: experianCompanyData.commercialBand
+        },
         financials: {
           averageMonthlyTurnover: bankAnalysis.average_monthly_income || 0,
-          // ... map others
           averageMonthlyCardTurnover: bankAnalysis.average_monthly_card_turnover || 0,
           averageEodBalance: bankAnalysis.average_eod_balance || 0,
           lowBalanceDays: bankAnalysis.low_balance_days_count || 0,
           maxMonthlyLowBalanceDays: bankAnalysis.max_monthly_low_balance_occurrence || 0,
           negativeBalanceDays: bankAnalysis.negative_balance_days_count || 0,
-          existingLenderCount: bankAnalysis.detected_repayments?.count || 0,
+          existingLenderCount: bankAnalysis.detected_repayments?.lenders?.length || 0,
           detectedCardProviders: bankAnalysis.detected_card_providers || []
         }
       };
+
+      // Re-run matching to ensure we have full details including rejection reasons
+      // (The DB only stores successful matches)
+      console.log("Re-running matchLenders via Webhook to generate full report...");
+      const results = matchLenders(applicationData);
 
       const emailHtml = generateQuickMatchEmailHtml({
         formData: formData as any,
         applicationData: applicationData,
         bankAnalysis: bankAnalysis,
-        matchedLenders: matchedLenders
+        matchedLenders: results
       });
 
       const adminEmail = process.env.ADMIN_EMAIL || "himanshujangir16@gmail.com";

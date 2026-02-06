@@ -116,7 +116,6 @@ export async function POST(req: Request) {
         registeredAddress: formData.registeredAddress || experianData.company?.summary?.registeredAddress || "",
 
         // Sole Trader Fields (if applicable)
-        // ... (can populate if businessType is sole_trader)
         timeTrading: String(applicationData.company.timeTradingMonths),
 
         // Contact
