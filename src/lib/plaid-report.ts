@@ -67,8 +67,9 @@ export async function generatePlaidReport(
       if (errorCode === "PRODUCT_NOT_READY") {
         retries++;
         if (retries > MAX_RETRIES) {
-          console.error(`PRODUCT_NOT_READY: Max retries (${MAX_RETRIES}) reached. Stopping fetch with partial data.`);
-          hasMore = false;
+          const msg = `Plaid Sync Timeout: PRODUCT_NOT_READY after max retries (${MAX_RETRIES}).`;
+          console.error(msg);
+          throw new Error(msg);
         } else {
           console.log(`PRODUCT_NOT_READY: Waiting 3 seconds before retrying (Attempt ${retries}/${MAX_RETRIES})...`);
           await new Promise((resolve) => setTimeout(resolve, 3000));

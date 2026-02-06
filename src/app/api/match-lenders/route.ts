@@ -154,7 +154,10 @@ export async function POST(req: Request) {
     console.log("Application saved with ID:", application.id);
 
     // --- SEND ADMIN EMAIL ---
+    let emailSent = false;
     try {
+      let shouldSendEmailNow = true;
+
       // Generate Plaid Report if connected
       if (plaidConnectionId) {
         try {
@@ -162,9 +165,17 @@ export async function POST(req: Request) {
             where: { id: plaidConnectionId }
           });
 
-          if (connection && connection.accessToken) {
-            console.log("Generating Plaid Reports...");
+          // STRICT: If connection is new (< 10 mins), force wait for Webhook to ensure 24 months.
+          // Plaid sometimes returns 30 days "Success" immediately, which we must avoid.
+          if (connection && (Date.now() - new Date(connection.createdAt).getTime() < 10 * 60 * 1000)) {
+            console.log("New Plaid Connection detected (<10 min). Delegating report generation to Webhook to ensure full history.");
+            shouldSendEmailNow = false;
+          }
+          else if (connection && connection.accessToken) {
+            console.log("Existing Connection (>10 min). Generating Plaid Reports immediately...");
             const companyRegNumber = formData.companyRegistrationNumber || experianData.company?.summary?.registrationNumber;
+
+            // This might THROW if Plaid is not ready (timeout)
             const reports = await generatePlaidReport(
               connection.accessToken,
               determinedCompanyName,
@@ -180,31 +191,46 @@ export async function POST(req: Request) {
             });
             console.log(`Attached ${reports.length} Plaid Reports.`);
           }
-        } catch (plaidErr) {
+        } catch (plaidErr: any) {
           console.error("Failed to generate Plaid report:", plaidErr);
-          // Don't block email sending
+
+          // Check if it's our specific "Not Ready" error
+          if (plaidErr.message && (plaidErr.message.includes("Plaid Sync Timeout") || plaidErr.message.includes("Transactions not ready"))) {
+            console.warn("Plaid data not ready yet. Skipping immediate email. Expecting Webhook to handle this later.");
+            shouldSendEmailNow = false;
+          } else {
+            // For other errors, we proceed to send the email WITHOUT the report (fallback)
+            console.warn("Generic Plaid error. Sending email without report.");
+          }
         }
       }
 
-      const emailHtml = generateQuickMatchEmailHtml({
-        formData: formData,
-        applicationData: applicationData,
-        bankAnalysis: bankAnalysis,
-        matchedLenders: results
-      });
+      if (shouldSendEmailNow) {
+        const emailHtml = generateQuickMatchEmailHtml({
+          formData: formData,
+          applicationData: applicationData,
+          bankAnalysis: bankAnalysis,
+          matchedLenders: results
+        });
 
-      // Send email to admin (using les@fundingmatch.ai as previously discussed)
-      // If environment variable ADMIN_EMAIL is set, use that, else default.
-      const adminEmail = process.env.ADMIN_EMAIL || "himanshujangir16@gmail.com";
+        // Send email to admin
+        const adminEmail = process.env.ADMIN_EMAIL || "himanshujangir16@gmail.com";
 
-      await sendEmail({
-        to: [adminEmail],
-        subject: `New Quick Match Application - ${determinedCompanyName}`,
-        html: emailHtml,
-        from: "Funding Match <les@fundingmatch.ai>",
-        attachments: emailAttachments
-      });
-      console.log(`Admin email sent to ${adminEmail}`);
+        await sendEmail({
+          to: [adminEmail],
+          subject: `New Quick Match Application - ${determinedCompanyName}`,
+          html: emailHtml,
+          from: "Funding Match <les@fundingmatch.ai>",
+          attachments: emailAttachments
+        });
+        console.log(`Admin email sent to ${adminEmail}`);
+        emailSent = true;
+
+        await prisma.quickMatchApplication.update({
+          where: { id: application.id },
+          data: { reportSent: true }
+        });
+      }
     } catch (emailErr) {
       console.error("Failed to send admin email:", emailErr);
     }

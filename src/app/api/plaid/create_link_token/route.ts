@@ -18,6 +18,7 @@ export async function POST(req: Request) {
       },
       country_codes: [CountryCode.Gb], // Adjust based on your region (e.g., US, CA, GB)
       language: "en",
+      webhook: `${process.env.NEXT_PUBLIC_APP_URL || 'https://fundingmatch.ai'}/api/webhooks/plaid`,
     });
 
     return NextResponse.json(createTokenResponse.data);

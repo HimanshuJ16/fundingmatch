@@ -38,8 +38,9 @@ model QuickMatchApplication {
   status         String @default("PENDING") // MATCHED, REJECTED, PENDING
   matchedLenders Json? // Stores list of matched lenders and scores
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  reportSent Boolean  @default(false)
 
   // Relation for Limited Company Directors (Step 3)
   directors Director[]
