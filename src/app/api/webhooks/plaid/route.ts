@@ -43,8 +43,10 @@ export async function POST(req: Request) {
       });
 
       if (!connection || !connection.application) {
-        console.log("No application found for this webhook item.");
-        return NextResponse.json({ received: true });
+        // If no application, it means the user hasn't submitted Step 8 yet.
+        // Return error to force Plaid to RETRY this webhook later.
+        console.log("No application found for this webhook item. Returning 404 to trigger retry.");
+        return NextResponse.json({ error: "Application not found yet" }, { status: 404 });
       }
 
       const application = connection.application;
@@ -163,6 +165,12 @@ export async function POST(req: Request) {
         html: emailHtml,
         from: "Funding Match <les@fundingmatch.ai>",
         attachments: attachments
+      });
+
+      // Mark as sent in DB to prevent duplicates
+      await prisma.quickMatchApplication.update({
+        where: { id: application.id },
+        data: { reportSent: true }
       });
 
       console.log("Async Email Sent Successfully via Webhook.");

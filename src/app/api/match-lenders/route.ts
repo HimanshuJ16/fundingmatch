@@ -159,50 +159,12 @@ export async function POST(req: Request) {
       let shouldSendEmailNow = true;
 
       // Generate Plaid Report if connected
+      // WEBHOOK-ONLY STRATEGY: 
+      // If Plaid Connected, we strictly defer the email to the Webhook.
+      // This ensures we always get the full 24-month history and avoids race conditions.
       if (plaidConnectionId) {
-        try {
-          const connection = await prisma.plaidConnection.findUnique({
-            where: { id: plaidConnectionId }
-          });
-
-          // STRICT: If connection is new (< 10 mins), force wait for Webhook to ensure 24 months.
-          // Plaid sometimes returns 30 days "Success" immediately, which we must avoid.
-          if (connection && (Date.now() - new Date(connection.createdAt).getTime() < 10 * 60 * 1000)) {
-            console.log("New Plaid Connection detected (<10 min). Delegating report generation to Webhook to ensure full history.");
-            shouldSendEmailNow = false;
-          }
-          else if (connection && connection.accessToken) {
-            console.log("Existing Connection (>10 min). Generating Plaid Reports immediately...");
-            const companyRegNumber = formData.companyRegistrationNumber || experianData.company?.summary?.registrationNumber;
-
-            // This might THROW if Plaid is not ready (timeout)
-            const reports = await generatePlaidReport(
-              connection.accessToken,
-              determinedCompanyName,
-              companyRegNumber
-            );
-
-            reports.forEach(report => {
-              emailAttachments.push({
-                filename: report.filename,
-                content: report.buffer,
-                contentType: "application/pdf"
-              });
-            });
-            console.log(`Attached ${reports.length} Plaid Reports.`);
-          }
-        } catch (plaidErr: any) {
-          console.error("Failed to generate Plaid report:", plaidErr);
-
-          // Check if it's our specific "Not Ready" error
-          if (plaidErr.message && (plaidErr.message.includes("Plaid Sync Timeout") || plaidErr.message.includes("Transactions not ready"))) {
-            console.warn("Plaid data not ready yet. Skipping immediate email. Expecting Webhook to handle this later.");
-            shouldSendEmailNow = false;
-          } else {
-            // For other errors, we proceed to send the email WITHOUT the report (fallback)
-            console.warn("Generic Plaid error. Sending email without report.");
-          }
-        }
+        console.log("Plaid Connection Detected. Deferring entire email to Webhook to ensure 24-month report.");
+        shouldSendEmailNow = false;
       }
 
       if (shouldSendEmailNow) {
