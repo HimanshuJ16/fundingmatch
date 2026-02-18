@@ -5,9 +5,11 @@ import { QuickMatchFormData } from "@/schemas/quickmatchform.schema";
 
 interface BankStatementsStepProps {
   isAnalyzing?: boolean;
+  onAnalysisStart?: () => void;
+  onAnalysisEnd?: () => void;
 }
 
-export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: BankStatementsStepProps) => {
+export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false, onAnalysisStart, onAnalysisEnd }: BankStatementsStepProps) => {
   const { register, setValue, watch, formState: { errors } } = useFormContext<QuickMatchFormData>();
   const [method, setMethod] = useState<"upload" | "link">("upload");
   const [files, setFiles] = useState<File[]>([]);
@@ -34,6 +36,7 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
 
   const fetchAnalysis = async (connectionId: string) => {
     try {
+      if (onAnalysisStart) onAnalysisStart();
       const response = await fetch("/api/plaid/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,6 +56,8 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
       }
     } catch (error) {
       console.error("Failed to fetch analysis", error);
+    } finally {
+      if (onAnalysisEnd) onAnalysisEnd();
     }
   };
 
@@ -125,6 +130,7 @@ export const BankStatementsStep = ({ isAnalyzing: isParentAnalyzing = false }: B
 
         // Fetch account details immediately
         setIsAnalyzing(true);
+        // Props callback already handled inside fetchAnalysis, but setIsAnalyzing handles local UI spinner
         try {
           await Promise.all([
             fetchAccounts(data.connection_id),

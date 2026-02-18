@@ -351,7 +351,11 @@ export const QuickMatchFormSection = () => {
                 Upload your business bank statements
               </p>
             </div>
-            <BankStatementsStep isAnalyzing={isAnalyzingStatements || isSubmitting} />
+            <BankStatementsStep
+              isAnalyzing={isAnalyzingStatements || isSubmitting}
+              onAnalysisStart={() => setIsAnalyzingStatements(true)}
+              onAnalysisEnd={() => setIsAnalyzingStatements(false)}
+            />
           </>
         );
       case 8:

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
       // Proceed if HISTORICAL_UPDATE or (SYNC_UPDATES_AVAILABLE && historical_update_complete)
 
-      // 1. Find the Connection & Application
+      // 3. Find the Connection & Application
       const connection = await prisma.plaidConnection.findFirst({
         where: { itemId: item_id },
         include: {
@@ -43,13 +43,40 @@ export async function POST(req: Request) {
       });
 
       if (!connection || !connection.application) {
-        // If no application, it means the user hasn't submitted Step 8 yet.
-        // Return error to force Plaid to RETRY this webhook later.
         console.log("No application found for this webhook item. Returning 404 to trigger retry.");
         return NextResponse.json({ error: "Application not found yet" }, { status: 404 });
       }
 
-      const application = connection.application;
+      let application = connection.application; // Mutable application object
+
+      // NEW: Redundancy Check - If Bank Analysis is missing, generate it now.
+      const hasBankData = application.bankStatementAnalysis && Object.keys(application.bankStatementAnalysis as object).length > 0;
+
+      if (!hasBankData) {
+        console.log(`[Webhook] Missing bankStatementAnalysis for App ${application.id}. Generating now via shared lib...`);
+        try {
+          // Import dynamically to avoid top-level issues if any
+          const { analyzePlaidConnection } = await import("@/lib/plaid-analysis");
+          const { data: analysisData } = await analyzePlaidConnection(connection.id);
+
+          // Save to DB
+          await prisma.quickMatchApplication.update({
+            where: { id: application.id },
+            data: { bankStatementAnalysis: analysisData }
+          });
+
+          // Update local variable for email generation
+          application = await prisma.quickMatchApplication.findUnique({
+            where: { id: application.id },
+            include: { directors: true }
+          }) as any;
+
+          console.log(`[Webhook] Successfully backfilled bankStatementAnalysis for App ${application.id}`);
+        } catch (err) {
+          console.error("[Webhook] Failed to backfill bank analysis:", err);
+          // We continue, but the email might have empty financial sections. 
+        }
+      }
 
       // check if we want to re-send? 
       // Ideally we should have an 'emailSent' flag. 
@@ -180,10 +207,15 @@ export async function POST(req: Request) {
         attachments: attachments
       });
 
-      // Mark as sent in DB to prevent duplicates
+      // Mark as sent in DB to prevent duplicates AND update matches
+      const matched = results.filter(r => r.match);
       await prisma.quickMatchApplication.update({
         where: { id: application.id },
-        data: { reportSent: true }
+        data: {
+          reportSent: true,
+          status: matched.length > 0 ? "MATCHED" : "REJECTED",
+          matchedLenders: matched as any
+        }
       });
 
       console.log("Async Email Sent Successfully via Webhook.");
