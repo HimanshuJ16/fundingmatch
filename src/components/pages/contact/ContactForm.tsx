@@ -127,6 +127,7 @@ export const ContactForm = ({ onClose }: ContactFormProps) => {
           <input
             {...register("phone")}
             placeholder="Your phone number"
+            type="tel"
             className={`w-full bg-[#1c2b4a] border ${errors.phone ? "border-red-500" : "border-[#ffffff14]"} rounded-xl px-4 py-4 text-white placeholder-[#ffffff44] focus:outline-none focus:border-[#b0efbd] transition-colors`}
           />
           {errors.phone && <span className="text-red-500 text-xs ml-1">{errors.phone.message}</span>}
